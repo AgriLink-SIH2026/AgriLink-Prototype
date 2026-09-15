@@ -7,14 +7,12 @@ export interface TransitionValidationResult {
 }
 
 export class WorkflowEngine {
-  /**
-   * Verifies whether a crop registration is eligible to enter the procurement queue
-   */
+  /** Checks whether a crop registration can enter the procurement queue. */
   public static canEnterProcurement(crop: CropRegistration): TransitionValidationResult {
-    if (crop.status !== 'Verified') {
+    if (crop.status !== 'Registered') {
       return {
         allowed: false,
-        reason: `Crop registration ${crop.id} is currently "${crop.status}". Only crops with "Verified" status can enter factory procurement.`,
+        reason: `Crop registration ${crop.id} is currently "${crop.status}" and cannot enter procurement.`,
       };
     }
     return { allowed: true };
@@ -93,19 +91,13 @@ export class WorkflowEngine {
   public static getNextStepGuidance(status: ProcurementStatus): string {
     switch (status) {
       case 'Crop Registered':
-        return 'Awaiting physical field verification by the local Field Officer.';
-      case 'Field Verified':
-        return 'Crop approved! Ready to be scheduled by the processing factory.';
+        return 'Crop registered. Compare processor bids and book an intake slot.';
       case 'Procurement Pending':
         return 'Factory reviewing procurement queue for calendar slot allocation.';
       case 'Procurement Scheduled':
         return 'Date confirmed. Labor gang assignment for harvest is next.';
       case 'Harvest Scheduled':
-        return 'Harvest date confirmed. Transport vehicle assignment in progress.';
-      case 'Transport Assigned':
-        return 'Vehicle and driver dispatched to farm gate for pickup.';
-      case 'In Transit':
-        return 'Consignment en route to factory intake gate.';
+        return 'Harvest date confirmed. Arrive at the processor for the booked intake slot.';
       case 'Arrived at Procurement Center':
         return 'Checked in at weighbridge. Laboratory sample testing next.';
       case 'Quality Check':

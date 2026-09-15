@@ -58,7 +58,7 @@ export const FarmerNotifications: React.FC = () => {
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2">
-        {['all', 'crop', 'verification', 'procurement', 'transport', 'payment'].map((cat) => (
+        {['all', 'crop', 'procurement', 'quality', 'payment'].map((cat) => (
           <button
             key={cat}
             onClick={() => setCategoryFilter(cat)}

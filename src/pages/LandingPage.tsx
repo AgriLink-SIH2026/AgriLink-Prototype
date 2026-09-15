@@ -7,7 +7,6 @@ import { JudgeDemoModal } from '../components/layout/JudgeDemoModal';
 import {
   Sprout,
   CheckCircle2,
-  ShieldCheck,
   Building2,
   ArrowRight,
   Clock,
@@ -126,7 +125,7 @@ export const LandingPage: React.FC = () => {
 
               {/* Subtext */}
               <p className="text-base sm:text-lg text-[#777268] leading-relaxed max-w-xl font-normal">
-                AgriLink connects farmers, field officers and processing factories on one digital network,
+                AgriLink connects farmers directly with processing factories on one digital network,
                 bringing certainty to harvest schedules, computerizing weighment, and securing automated settlements.
               </p>
 
@@ -171,7 +170,7 @@ export const LandingPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* 3 Large Role Buttons */}
+                {/* Role Buttons */}
                 <div className="space-y-3">
                   <button
                     type="button"
@@ -183,20 +182,6 @@ export const LandingPage: React.FC = () => {
                         <Sprout className="w-4 h-4" />
                       </div>
                       <span>Farmer</span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-[#EBE5D6]/60 group-hover:text-[#D97824] group-hover:translate-x-1 transition-all" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchRole('officer')}
-                    className="w-full py-3.5 px-4 rounded-2xl bg-[#244532] hover:bg-[#2d563e] border border-[#346347] text-left text-sm font-bold text-white flex items-center justify-between transition-all group shadow-2xs"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-[#173522] flex items-center justify-center text-[#D97824]">
-                        <ShieldCheck className="w-4 h-4" />
-                      </div>
-                      <span>Field Officer</span>
                     </div>
                     <ArrowRight className="w-4 h-4 text-[#EBE5D6]/60 group-hover:text-[#D97824] group-hover:translate-x-1 transition-all" />
                   </button>
@@ -216,23 +201,6 @@ export const LandingPage: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Weighbridge Slip Preview Card (Matching Screenshot 3) */}
-                <div className="mt-5 p-4 rounded-2xl bg-[#EBE5D6] text-[#171713] border border-[#DFD7C4]">
-                  <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-[#777268] mb-1.5">
-                    <span>WEIGHBRIDGE SLIP</span>
-                    <span className="font-mono text-[#D97824]">SLP-2026</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold text-[#171713]">Sugarcane (Co 86032)</p>
-                      <p className="text-[11px] text-[#777268]">Ramesh Patel • Kasaba Bavada</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs font-mono font-bold text-[#173522]">28,450 kg</span>
-                      <span className="text-[10px] text-emerald-700 block font-semibold">Certified ✓</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -321,17 +289,17 @@ export const LandingPage: React.FC = () => {
               {
                 step: '01',
                 title: 'Farmer Registers Crop',
-                desc: 'Enters acreage, crop variety, and captures real GPS coordinates with photographic proof.',
+                desc: 'Enters acreage, crop variety and expected harvest date—no photo upload required.',
               },
               {
                 step: '02',
-                title: 'Field Officer Verifies',
-                desc: 'Examines boundary polygon, on-site photographs, and files digital inspection certificate.',
+                title: 'Farmer Compares Processors',
+                desc: 'Compares processor bids, queue times and available intake slots across Pune buyers.',
               },
               {
                 step: '03',
                 title: 'Factory Schedules Intake',
-                desc: 'Allocates calendar slot, coordinates harvesting labor, and dispatches transport vehicle.',
+                desc: 'Allocates a factory intake slot and prepares the digital gate queue for the farmer.',
               },
               {
                 step: '04',
@@ -371,19 +339,19 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 3 Roles Section */}
+      {/* Two Roles Section */}
       <section className="py-20 bg-[#173522] text-[#EBE5D6] border-t border-[#244532]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <h2 className="font-serif text-3xl sm:text-4xl font-extrabold text-[#EBE5D6] tracking-tight">
-              One Unified Platform for Three Key Roles
+              One Direct Platform for Farmers and Factories
             </h2>
             <p className="text-xs sm:text-sm text-[#EBE5D6]/70 mt-2">
               Tailored interfaces built specifically for the needs of each participant in the agricultural supply chain.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Farmer */}
             <div className="p-7 rounded-3xl bg-[#244532] border border-[#346347] flex flex-col justify-between shadow-xs">
               <div>
@@ -392,7 +360,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <h3 className="font-serif text-xl font-bold text-[#EBE5D6] mb-2">Farmer</h3>
                 <p className="text-xs text-[#EBE5D6]/70 leading-relaxed">
-                  Simple, accessible portal for rural producers. Register crops with GPS camera, track
+                  Simple, accessible portal for rural producers. Register crops, compare live factory offers, track
                   procurement progress in real time, view weighment certificates, and receive SMS alerts.
                 </p>
               </div>
@@ -406,28 +374,6 @@ export const LandingPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Field Officer */}
-            <div className="p-7 rounded-3xl bg-[#244532] border border-[#346347] flex flex-col justify-between shadow-xs">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#173522] text-[#D97824] flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h3 className="font-serif text-xl font-bold text-[#EBE5D6] mb-2">Field Officer</h3>
-                <p className="text-xs text-[#EBE5D6]/70 leading-relaxed">
-                  Review crop registrations against GIS maps and photographic evidence. Verify authenticity,
-                  request re-verification, or file digital inspection reports with yield estimates.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleLaunchRole('officer')}
-                className="mt-6 w-full py-2.5 bg-[#D97824] hover:bg-[#C3681B] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
-              >
-                <span>Access Officer Desk</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
             {/* Factory */}
             <div className="p-7 rounded-3xl bg-[#244532] border border-[#346347] flex flex-col justify-between shadow-xs">
               <div>
@@ -437,7 +383,7 @@ export const LandingPage: React.FC = () => {
                 <h3 className="font-serif text-xl font-bold text-[#EBE5D6] mb-2">Processing Factory</h3>
                 <p className="text-xs text-[#EBE5D6]/70 leading-relaxed">
                   Industrial operations desk for sugar mills, ginning units, and oil expellers. Manage
-                  intake queues, dispatch transport, record electronic weighment, and issue digital invoices.
+                  intake queues, record electronic weighment, and issue digital invoices.
                 </p>
               </div>
               <button
@@ -478,4 +424,3 @@ export const LandingPage: React.FC = () => {
     </div>
   );
 };
-

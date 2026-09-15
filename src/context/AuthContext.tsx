@@ -108,9 +108,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initializeStorage();
     let users = getStoredUsers();
 
-    const roleDemoIds: Record<UserRole, string> = {
+    const roleDemoIds: Partial<Record<UserRole, string>> = {
       farmer: 'farmer-1',
-      officer: 'officer-1',
       factory: 'factory-1',
     };
 

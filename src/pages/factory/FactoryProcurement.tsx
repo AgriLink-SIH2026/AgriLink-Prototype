@@ -3,7 +3,6 @@ import { useAppData } from '../../context/AppDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { TransportModal } from '../../components/factory/TransportModal';
 import { QualityWeighmentModal } from '../../components/factory/QualityWeighmentModal';
 import { BillGenerateModal } from '../../components/factory/BillGenerateModal';
 import { Modal } from '../../components/common/Modal';
@@ -11,7 +10,6 @@ import { ProcurementRecord, CropRegistration } from '../../types';
 import {
   Milestone,
   PlusCircle,
-  Truck,
   Scale,
   Receipt,
   CheckCircle2,
@@ -27,8 +25,12 @@ export const FactoryProcurement: React.FC = () => {
   const { showToast } = useToast();
 
   const activeFactory =
-    factories.find((f) => f.id === currentUser?.id || f.name.includes(currentUser?.name || '')) ||
-    factories[0];
+    factories.find((f) => f.id === currentUser?.id || f.name.includes(currentUser?.name || '')) || {
+      id: currentUser?.id || 'new-factory', name: currentUser?.name || 'New Processing Factory',
+      district: 'Not configured', state: '', dailyCapacityTons: 0, supportedCrops: [],
+      industryType: 'Grain' as const, address: '', phone: currentUser?.phone || '',
+      email: currentUser?.email || '', latitude: 0, longitude: 0,
+    };
 
   // Modals state
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -47,14 +49,13 @@ export const FactoryProcurement: React.FC = () => {
   const [priority, setPriority] = useState<'Normal' | 'High' | 'Urgent'>('Normal');
 
   // Operations Modals
-  const [transportTarget, setTransportTarget] = useState<ProcurementRecord | null>(null);
   const [qualityTarget, setQualityTarget] = useState<ProcurementRecord | null>(null);
   const [billingTarget, setBillingTarget] = useState<ProcurementRecord | null>(null);
 
-  // Filter verified crops not yet in procurement
+  // Crops registered directly by farmers and not yet in procurement
   const existingProcurementCropIds = new Set(procurements.map((p) => p.cropRegistrationId));
-  const verifiedCropsAvailable = crops.filter(
-    (c) => c.status === 'Verified' && !existingProcurementCropIds.has(c.id)
+  const registeredCropsAvailable = crops.filter(
+    (c) => c.status === 'Registered' && !existingProcurementCropIds.has(c.id)
   );
 
   const handleOpenScheduleModal = (crop: CropRegistration) => {
@@ -100,36 +101,36 @@ export const FactoryProcurement: React.FC = () => {
             Procurement Lifecycle Manager
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Transition consignments through verified stages: Scheduling &rarr; Transport &rarr; Quality &rarr; Weighment &rarr; Billing &rarr; Payout.
+            Transition consignments through Scheduling &rarr; Quality &rarr; Weighment &rarr; Billing &rarr; Payout.
           </p>
         </div>
 
-        {verifiedCropsAvailable.length > 0 && (
+        {registeredCropsAvailable.length > 0 && (
           <button
-            onClick={() => handleOpenScheduleModal(verifiedCropsAvailable[0])}
+            onClick={() => handleOpenScheduleModal(registeredCropsAvailable[0])}
             className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2 self-start sm:self-auto"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>Intake Verified Crop ({verifiedCropsAvailable.length} Available)</span>
+            <span>Intake Registered Crop ({registeredCropsAvailable.length} Available)</span>
           </button>
         )}
       </div>
 
-      {/* Verified Crops Ready for Scheduling Banner */}
-      {verifiedCropsAvailable.length > 0 && (
+      {/* Registered crops ready for scheduling */}
+      {registeredCropsAvailable.length > 0 && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Verified Crops Awaiting Intake Slot Allocation</span>
+              <span>Registered Crops Awaiting Intake Slot Allocation</span>
             </span>
             <span className="text-[11px] font-semibold text-emerald-800 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
-              {verifiedCropsAvailable.length} Ready Plots
+              {registeredCropsAvailable.length} Ready Lots
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {verifiedCropsAvailable.map((crop) => (
+            {registeredCropsAvailable.map((crop) => (
               <div
                 key={crop.id}
                 className="bg-white p-3.5 rounded-2xl border border-emerald-100 flex items-center justify-between gap-3 shadow-2xs"
@@ -163,7 +164,7 @@ export const FactoryProcurement: React.FC = () => {
             <Layers className="w-12 h-12 text-slate-300 mx-auto mb-2" />
             <h4 className="text-sm font-bold text-slate-800">No active procurements in queue</h4>
             <p className="text-xs text-slate-500 mt-1">
-              Select an available verified crop above to schedule your first intake.
+              Select an available registered crop above to schedule your first intake.
             </p>
           </div>
         ) : (
@@ -199,8 +200,8 @@ export const FactoryProcurement: React.FC = () => {
                 </div>
               </div>
 
-              {/* Row 2: Four Key Milestone Pillars */}
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+              {/* Row 2: Key milestone pillars */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 {/* 1. Scheduling Pillar */}
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
@@ -214,29 +215,10 @@ export const FactoryProcurement: React.FC = () => {
                   </p>
                 </div>
 
-                {/* 2. Transport Pillar */}
+                {/* 2. Quality & Weighment Pillar */}
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                    2. Transport Logistics
-                  </span>
-                  {proc.transport ? (
-                    <div>
-                      <p className="font-mono font-semibold text-blue-700">
-                        {proc.transport.vehicleNumber}
-                      </p>
-                      <p className="text-[11px] text-slate-500">
-                        {proc.transport.driverName} ({proc.transport.status})
-                      </p>
-                    </div>
-                  ) : (
-                    <span className="text-slate-400 italic">Not assigned yet</span>
-                  )}
-                </div>
-
-                {/* 3. Quality & Weighment Pillar */}
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                    3. Certified Net Weight
+                    2. Certified Net Weight
                   </span>
                   {proc.weighment ? (
                     <div>
@@ -252,10 +234,10 @@ export const FactoryProcurement: React.FC = () => {
                   )}
                 </div>
 
-                {/* 4. Billing & Payout Pillar */}
+                {/* 3. Billing & Payout Pillar */}
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/70">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                    4. Digital Bill &amp; Payout
+                    3. Digital Bill &amp; Payout
                   </span>
                   {proc.bill ? (
                     <div>
@@ -279,14 +261,6 @@ export const FactoryProcurement: React.FC = () => {
                 </span>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setTransportTarget(proc)}
-                    className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
-                  >
-                    <Truck className="w-3.5 h-3.5" />
-                    <span>{proc.transport ? 'Update Transport' : 'Assign Transport'}</span>
-                  </button>
-
                   <button
                     onClick={() => setQualityTarget(proc)}
                     className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
@@ -421,14 +395,6 @@ export const FactoryProcurement: React.FC = () => {
       )}
 
       {/* Operations Modals */}
-      {transportTarget && (
-        <TransportModal
-          isOpen={!!transportTarget}
-          onClose={() => setTransportTarget(null)}
-          procurement={transportTarget}
-        />
-      )}
-
       {qualityTarget && (
         <QualityWeighmentModal
           isOpen={!!qualityTarget}

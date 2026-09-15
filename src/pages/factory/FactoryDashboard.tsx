@@ -4,7 +4,6 @@ import { useAppData } from '../../context/AppDataContext';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { SmartInsights } from '../../components/common/SmartInsights';
 import { SmartInsightsService } from '../../services/smartInsights';
-import { TransportModal } from '../../components/factory/TransportModal';
 import { QualityWeighmentModal } from '../../components/factory/QualityWeighmentModal';
 import { BillGenerateModal } from '../../components/factory/BillGenerateModal';
 import { ProcurementRecord } from '../../types';
@@ -15,7 +14,6 @@ import {
   Sprout,
   Clock,
   Calendar,
-  Truck,
   CheckCheck,
   Search,
   Filter,
@@ -32,8 +30,12 @@ export const FactoryDashboard: React.FC = () => {
 
   // Active factory details
   const activeFactory =
-    factories.find((f) => f.id === currentUser?.id || f.name.includes(currentUser?.name || '')) ||
-    factories[0];
+    factories.find((f) => f.id === currentUser?.id || f.name.includes(currentUser?.name || '')) || {
+      id: currentUser?.id || 'new-factory', name: currentUser?.name || 'New Processing Factory',
+      district: 'Not configured', state: '', dailyCapacityTons: 0, supportedCrops: [],
+      industryType: 'Grain' as const, address: '', phone: currentUser?.phone || '',
+      email: currentUser?.email || '', latitude: 0, longitude: 0,
+    };
 
   // Filters for Procurement Queue
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,14 +43,13 @@ export const FactoryDashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Modal handlers
-  const [transportTarget, setTransportTarget] = useState<ProcurementRecord | null>(null);
   const [qualityTarget, setQualityTarget] = useState<ProcurementRecord | null>(null);
   const [billingTarget, setBillingTarget] = useState<ProcurementRecord | null>(null);
 
   // Metrics (Requirement 15)
   const uniqueFarmersCount = new Set(crops.map((c) => c.farmerId)).size;
-  const verifiedCropsCount = crops.filter((c) => c.status === 'Verified').length;
-  const pendingProcurementCount = verifiedCropsCount - procurements.length;
+  const registeredCropsCount = crops.filter((c) => c.status === 'Registered').length;
+  const pendingProcurementCount = registeredCropsCount - procurements.length;
   const scheduledCount = procurements.filter(
     (p) => p.currentStatus === 'Procurement Scheduled' || p.currentStatus === 'Harvest Scheduled'
   ).length;
@@ -114,10 +115,10 @@ export const FactoryDashboard: React.FC = () => {
 
         <div className="bg-[#EBE5D6] p-4 rounded-2xl border border-[#DFD7C4] shadow-xs">
           <div className="flex items-center justify-between text-[#777268] mb-1">
-            <span className="text-[11px] font-semibold text-[#173522]">Verified Crops</span>
+            <span className="text-[11px] font-semibold text-[#173522]">Registered Crops</span>
             <Sprout className="w-4 h-4 text-[#173522]" />
           </div>
-          <p className="text-2xl font-serif font-bold text-[#173522]">{verifiedCropsCount}</p>
+          <p className="text-2xl font-serif font-bold text-[#173522]">{registeredCropsCount}</p>
           <span className="text-[10px] text-[#777268]">Ready for intake</span>
         </div>
 
@@ -141,11 +142,11 @@ export const FactoryDashboard: React.FC = () => {
 
         <div className="bg-[#EBE5D6] p-4 rounded-2xl border border-[#DFD7C4] shadow-xs">
           <div className="flex items-center justify-between text-[#777268] mb-1">
-            <span className="text-[11px] font-semibold text-[#173522]">Active Transit</span>
-            <Truck className="w-4 h-4 text-[#D97824]" />
+            <span className="text-[11px] font-semibold text-[#173522]">Active Intake</span>
+            <Layers className="w-4 h-4 text-[#D97824]" />
           </div>
           <p className="text-2xl font-serif font-bold text-[#D97824]">{activeProcurementCount}</p>
-          <span className="text-[10px] text-[#777268]">En route / yard</span>
+          <span className="text-[10px] text-[#777268]">Scheduled / at yard</span>
         </div>
 
         <div className="bg-[#EBE5D6] p-4 rounded-2xl border border-[#DFD7C4] shadow-xs col-span-2 sm:col-span-1">
@@ -167,7 +168,7 @@ export const FactoryDashboard: React.FC = () => {
               <span>Active Procurement Queue</span>
             </h3>
             <p className="text-xs text-[#777268] mt-0.5">
-              Live batch sequencing from farm pickup to electronic weighment and computerized payout.
+              Live batch sequencing from booked intake to electronic weighment and computerized payout.
             </p>
           </div>
 
@@ -191,8 +192,6 @@ export const FactoryDashboard: React.FC = () => {
             >
               <option value="all">All Stages</option>
               <option value="Procurement Scheduled">Procurement Scheduled</option>
-              <option value="Transport Assigned">Transport Assigned</option>
-              <option value="In Transit">In Transit</option>
               <option value="Quality Check">Quality Check</option>
               <option value="Accepted">Accepted</option>
               <option value="Billing">Billing</option>
@@ -274,16 +273,6 @@ export const FactoryDashboard: React.FC = () => {
                     </td>
                     <td className="p-3 text-right space-x-1">
                       {/* Step-appropriate action button */}
-                      {(!proc.transport || proc.transport.status !== 'Completed') && (
-                        <button
-                          onClick={() => setTransportTarget(proc)}
-                          className="px-2.5 py-1 bg-[#F3EFE4] hover:bg-[#EBE5D6] text-[#173522] border border-[#DFD7C4] rounded-lg font-semibold text-[11px] transition inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <Truck className="w-3 h-3 text-[#D97824]" />
-                          <span>Transport</span>
-                        </button>
-                      )}
-
                       {!proc.weighment && (
                         <button
                           onClick={() => setQualityTarget(proc)}
@@ -319,14 +308,6 @@ export const FactoryDashboard: React.FC = () => {
       />
 
       {/* Operations Modals */}
-      {transportTarget && (
-        <TransportModal
-          isOpen={!!transportTarget}
-          onClose={() => setTransportTarget(null)}
-          procurement={transportTarget}
-        />
-      )}
-
       {qualityTarget && (
         <QualityWeighmentModal
           isOpen={!!qualityTarget}

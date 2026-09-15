@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import {
   CropRegistration,
   ProcurementRecord,
-  InspectionReport,
   Notification,
   FactoryInfo,
   CropType,
@@ -10,7 +9,6 @@ import {
   ProcurementStatus,
   QualityRecord,
   WeighmentRecord,
-  TransportRecord,
 } from '../types';
 import {
   initializeStorage,
@@ -18,8 +16,6 @@ import {
   saveCrop,
   getStoredProcurements,
   saveProcurement,
-  getStoredInspections,
-  saveInspection,
   getStoredNotifications,
   getStoredFactories,
   markNotificationAsRead,
@@ -40,25 +36,14 @@ interface RegisterCropInput {
   district: string;
   state: string;
   notes?: string;
-  imageUrl: string;
-  latitude: number;
-  longitude: number;
-  locationAccuracy?: number;
 }
 
 interface AppDataContextType {
   crops: CropRegistration[];
   procurements: ProcurementRecord[];
-  inspections: InspectionReport[];
   notifications: Notification[];
   factories: FactoryInfo[];
   registerCrop: (data: RegisterCropInput) => Promise<CropRegistration>;
-  verifyCrop: (
-    cropId: string,
-    decision: 'Verified' | 'Rejected' | 'Re-verification Required',
-    remarks: string,
-    inspectionData?: Partial<InspectionReport>
-  ) => Promise<void>;
   scheduleProcurement: (data: {
     cropRegistrationId: string;
     factoryId: string;
@@ -67,14 +52,6 @@ interface AppDataContextType {
     batchNumber: string;
     priority?: 'Normal' | 'High' | 'Urgent';
   }) => Promise<ProcurementRecord>;
-  assignTransport: (
-    procurementId: string,
-    transportData: Omit<TransportRecord, 'id' | 'assignedAt'>
-  ) => Promise<void>;
-  updateTransportStatus: (
-    procurementId: string,
-    status: TransportRecord['status']
-  ) => Promise<void>;
   recordQualityAndWeighment: (
     procurementId: string,
     quality: Omit<QualityRecord, 'id' | 'checkedAt'>,
@@ -104,10 +81,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     initializeStorage();
     return getStoredProcurements();
   });
-  const [inspections, setInspections] = useState<InspectionReport[]>(() => {
-    initializeStorage();
-    return getStoredInspections();
-  });
   const [notifications, setNotifications] = useState<Notification[]>(() => {
     initializeStorage();
     return getStoredNotifications();
@@ -120,7 +93,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
   const loadData = () => {
     setCrops(getStoredCrops());
     setProcurements(getStoredProcurements());
-    setInspections(getStoredInspections());
     setNotifications(getStoredNotifications());
     setFactories(getStoredFactories());
   };
@@ -151,26 +123,11 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       district: data.district,
       state: data.state,
       notes: data.notes,
-      status: 'Pending Verification',
+      status: 'Registered',
       registrationDate: new Date().toISOString(),
-      imageUrl: data.imageUrl,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      locationAccuracy: data.locationAccuracy,
-      capturedAt: new Date().toISOString(),
     };
 
     saveCrop(newCrop);
-
-    // Notify Field Officers
-    dispatchNotification({
-      recipientUserId: 'officer-1',
-      recipientRole: 'officer',
-      title: 'New Crop Awaiting Verification',
-      message: `${newCrop.farmerName} registered ${newCrop.cropType} (${newCrop.id}) in ${newCrop.village}, ${newCrop.district}.`,
-      category: 'crop',
-      linkUrl: '/officer/verification',
-    });
 
     // Notify Farmer confirmation (In-app + SMS)
     dispatchNotification({
@@ -179,75 +136,12 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       recipientPhone: newCrop.farmerPhone,
       sendSms: true,
       title: 'Crop Registered Successfully ✓',
-      message: `Your ${newCrop.cropType} (${newCrop.id}) was submitted with geotagged proof. Pending field officer inspection.`,
+      message: `Your ${newCrop.cropType} (${newCrop.id}) is registered and ready for processor comparison and intake booking.`,
       category: 'crop',
       linkUrl: '/farmer/crops',
     });
 
     return newCrop;
-  };
-
-  const verifyCrop = async (
-    cropId: string,
-    decision: 'Verified' | 'Rejected' | 'Re-verification Required',
-    remarks: string,
-    inspectionData?: Partial<InspectionReport>
-  ) => {
-    const targetCrop = crops.find((c) => c.id === cropId);
-    if (!targetCrop) return;
-
-    let reportId: string | undefined;
-
-    if (decision === 'Verified' && inspectionData) {
-      reportId = `REP-2026-${String(inspections.length + 1).padStart(4, '0')}`;
-      const newReport: InspectionReport = {
-        id: reportId,
-        cropRegistrationId: cropId,
-        officerId: currentUser?.id || 'officer-1',
-        officerName: currentUser?.name || 'Rajesh Sharma (Agronomist)',
-        cropCondition: inspectionData.cropCondition || 'Good',
-        fieldCondition: inspectionData.fieldCondition || 'Field boundaries and GPS verified.',
-        pestInfestationRisk: inspectionData.pestInfestationRisk || 'Low',
-        soilMoistureCondition: inspectionData.soilMoistureCondition || 'Adequate',
-        estimatedYieldPerAcre: inspectionData.estimatedYieldPerAcre || inspectionData.estimatedYieldPerAcreKg || 25000,
-        estimatedYieldPerAcreKg: inspectionData.estimatedYieldPerAcreKg || inspectionData.estimatedYieldPerAcre || 25000,
-        verificationRemarks: remarks,
-        inspectionDate: new Date().toISOString(),
-      };
-      saveInspection(newReport);
-    }
-
-    const updatedCrop: CropRegistration = {
-      ...targetCrop,
-      status: decision,
-      verificationDate: new Date().toISOString(),
-      verifiedByOfficerId: currentUser?.id || 'officer-1',
-      verifiedByOfficerName: currentUser?.name || 'Rajesh Sharma (Agronomist)',
-      officerRemarks: remarks,
-      rejectionReason: decision === 'Rejected' ? remarks : undefined,
-      inspectionReportId: reportId || targetCrop.inspectionReportId,
-    };
-
-    saveCrop(updatedCrop);
-
-    // Notify the Farmer (In-App + SMS + IVR)
-    dispatchNotification({
-      recipientUserId: targetCrop.farmerId,
-      recipientRole: 'farmer',
-      recipientPhone: targetCrop.farmerPhone,
-      sendSms: true,
-      sendIvr: decision === 'Verified',
-      title:
-        decision === 'Verified'
-          ? 'Crop Verified by Field Officer ✓'
-          : `Crop ${decision}`,
-      message:
-        decision === 'Verified'
-          ? `Your ${targetCrop.cropType} (${targetCrop.id}) has been approved and is now eligible for factory procurement.`
-          : `Officer Remarks: ${remarks}`,
-      category: 'verification',
-      linkUrl: '/farmer/crops',
-    });
   };
 
   const scheduleProcurement = async (data: {
@@ -287,13 +181,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
           status: 'Crop Registered',
           timestamp: crop.registrationDate,
           updatedBy: crop.farmerName,
-          notes: 'Crop submitted with geotagged evidence.',
-        },
-        {
-          status: 'Field Verified',
-          timestamp: crop.verificationDate || new Date().toISOString(),
-          updatedBy: crop.verifiedByOfficerName || 'Field Officer',
-          notes: crop.officerRemarks || 'Field verified.',
+          notes: 'Crop details submitted by farmer.',
         },
         {
           status: 'Procurement Scheduled',
@@ -319,98 +207,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
 
     return newProcurement;
-  };
-
-  const assignTransport = async (
-    procurementId: string,
-    transportData: Omit<TransportRecord, 'id' | 'assignedAt'>
-  ) => {
-    const proc = procurements.find((p) => p.id === procurementId);
-    if (!proc) return;
-
-    const transport: TransportRecord = {
-      ...transportData,
-      id: `TR-${Date.now().toString().slice(-4)}`,
-      assignedAt: new Date().toISOString(),
-    };
-
-    const updated: ProcurementRecord = {
-      ...proc,
-      currentStatus: 'Transport Assigned',
-      transport,
-      updatedAt: new Date().toISOString(),
-      statusHistory: [
-        ...proc.statusHistory,
-        {
-          status: 'Transport Assigned',
-          timestamp: new Date().toISOString(),
-          updatedBy: proc.factoryName,
-          notes: `Assigned vehicle ${transport.vehicleNumber} (Driver: ${transport.driverName}).`,
-        },
-      ],
-    };
-
-    saveProcurement(updated);
-
-    // Notify Farmer
-    dispatchNotification({
-      recipientUserId: proc.farmerId,
-      recipientRole: 'farmer',
-      recipientPhone: proc.farmerPhone,
-      sendSms: true,
-      title: 'Transport Assigned for Pickup',
-      message: `Vehicle ${transport.vehicleNumber} driven by ${transport.driverName} (${transport.driverPhone}) assigned for pickup on ${transport.pickupDate}.`,
-      category: 'transport',
-      linkUrl: '/farmer/procurement',
-    });
-  };
-
-  const updateTransportStatus = async (
-    procurementId: string,
-    status: TransportRecord['status']
-  ) => {
-    const proc = procurements.find((p) => p.id === procurementId);
-    if (!proc || !proc.transport) return;
-
-    const updatedTransport: TransportRecord = {
-      ...proc.transport,
-      status,
-    };
-
-    let targetProcStatus = proc.currentStatus;
-    if (status === 'In Transit') targetProcStatus = 'In Transit';
-    if (status === 'Arrived') targetProcStatus = 'Arrived at Procurement Center';
-    if (status === 'Completed') targetProcStatus = 'Quality Check';
-
-    const updated: ProcurementRecord = {
-      ...proc,
-      currentStatus: targetProcStatus,
-      transport: updatedTransport,
-      updatedAt: new Date().toISOString(),
-      statusHistory: [
-        ...proc.statusHistory,
-        {
-          status: targetProcStatus,
-          timestamp: new Date().toISOString(),
-          updatedBy: `${proc.transport.driverName} / Factory Logistics`,
-          notes: `Logistics status updated to: ${status}`,
-        },
-      ],
-    };
-
-    saveProcurement(updated);
-
-    // Notify Farmer
-    dispatchNotification({
-      recipientUserId: proc.farmerId,
-      recipientRole: 'farmer',
-      recipientPhone: proc.farmerPhone,
-      sendSms: true,
-      title: `Produce Transport: ${status}`,
-      message: `Your produce is currently: ${status}. Destination: ${proc.transport.destination}`,
-      category: 'transport',
-      linkUrl: '/farmer/procurement',
-    });
   };
 
   const recordQualityAndWeighment = async (
@@ -633,19 +429,34 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     resetStorageToDefaults();
   };
 
+  // Demo accounts receive curated seed data. Every newly registered account starts
+  // with a genuinely empty workspace and only sees records created for that account.
+  const activeFactory = currentUser?.role === 'factory'
+    ? factories.find((factory) => factory.id === currentUser.id)
+    : undefined;
+  const visibleCrops = currentUser?.role === 'farmer'
+    ? crops.filter((crop) => crop.farmerId === currentUser.id)
+    : activeFactory
+      ? crops.filter((crop) => activeFactory.supportedCrops.includes(crop.cropType))
+      : [];
+  const visibleProcurements = currentUser?.role === 'farmer'
+    ? procurements.filter((procurement) => procurement.farmerId === currentUser.id)
+    : activeFactory
+      ? procurements.filter((procurement) => procurement.factoryId === activeFactory.id)
+      : [];
+  const visibleNotifications = currentUser
+    ? notifications.filter((notification) => notification.recipientUserId === currentUser.id)
+    : [];
+
   return (
     <AppDataContext.Provider
       value={{
-        crops,
-        procurements,
-        inspections,
-        notifications,
+        crops: visibleCrops,
+        procurements: visibleProcurements,
+        notifications: visibleNotifications,
         factories,
         registerCrop,
-        verifyCrop,
         scheduleProcurement,
-        assignTransport,
-        updateTransportStatus,
         recordQualityAndWeighment,
         generateBill,
         markPaymentPaid,

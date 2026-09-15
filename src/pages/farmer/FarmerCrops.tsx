@@ -3,7 +3,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useAppData } from '../../context/AppDataContext';
 import { CropCard } from '../../components/farmer/CropCard';
 import { Modal } from '../../components/common/Modal';
-import { MapView } from '../../components/common/MapView';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { CropRegistration } from '../../types';
 import { navigate } from '../../utils/navigation';
@@ -13,10 +12,6 @@ import {
   Search,
   Filter,
   Calendar,
-  MapPin,
-  ShieldCheck,
-  Camera,
-  FileText,
 } from 'lucide-react';
 
 export const FarmerCrops: React.FC = () => {
@@ -56,7 +51,7 @@ export const FarmerCrops: React.FC = () => {
             Registered Crops
           </h2>
           <p className="text-xs font-sans text-[#777268] mt-1">
-            Browse all your cultivated plots and check live field officer verification records.
+            Browse your registered processing crops and open the processor marketplace when ready.
           </p>
         </div>
 
@@ -89,11 +84,8 @@ export const FarmerCrops: React.FC = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="text-xs p-2.5 rounded-xl border border-[#DFD7C4] bg-[#F3EFE4]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#173522] font-sans text-[#171713]"
           >
-            <option value="all">All Verification Statuses</option>
-            <option value="Pending Verification">Pending Verification</option>
-            <option value="Verified">Verified ✓</option>
-            <option value="Rejected">Rejected</option>
-            <option value="Re-verification Required">Re-verification Required</option>
+            <option value="all">All Crop Records</option>
+            <option value="Registered">Registered</option>
           </select>
         </div>
       </div>
@@ -180,60 +172,6 @@ export const FarmerCrops: React.FC = () => {
                 <p className="font-semibold text-[#D97824] mt-0.5">{selectedCrop.expectedHarvestDate}</p>
               </div>
             </div>
-
-            {/* Geotagged Evidence */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-[#173522] flex items-center gap-1.5 font-sans">
-                <Camera className="w-3.5 h-3.5 text-[#D97824]" />
-                <span>Geotagged Photographic Proof &amp; GPS Coordinates</span>
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="h-40 rounded-2xl overflow-hidden border border-[#DFD7C4] bg-[#F3EFE4]">
-                  <img
-                    src={selectedCrop.imageUrl}
-                    alt="Field proof"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <MapView
-                    center={[selectedCrop.latitude, selectedCrop.longitude]}
-                    zoom={14}
-                    height="160px"
-                    markers={[
-                      {
-                        lat: selectedCrop.latitude,
-                        lng: selectedCrop.longitude,
-                        title: selectedCrop.cropType,
-                        subtitle: selectedCrop.id,
-                        type: 'crop',
-                      },
-                    ]}
-                  />
-                  <p className="text-[11px] font-mono text-[#777268] mt-1">
-                    GPS: {selectedCrop.latitude.toFixed(5)}°N, {selectedCrop.longitude.toFixed(5)}°E
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Officer Remarks / Verification Section */}
-            {selectedCrop.officerRemarks && (
-              <div className="p-4 rounded-2xl bg-[#F3EFE4] border border-[#DFD7C4] text-xs space-y-1">
-                <div className="flex items-center gap-1.5 font-bold text-[#173522]">
-                  <ShieldCheck className="w-4 h-4 text-[#173522]" />
-                  <span>Field Officer Assessment ({selectedCrop.verifiedByOfficerName || 'Officer'})</span>
-                </div>
-                <p className="text-[#171713] leading-relaxed italic font-serif">
-                  &ldquo;{selectedCrop.officerRemarks}&rdquo;
-                </p>
-                {selectedCrop.verificationDate && (
-                  <p className="text-[10px] text-[#777268] pt-1 font-sans">
-                    Verified on: {new Date(selectedCrop.verificationDate).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            )}
 
             <div className="flex justify-end pt-2 border-t border-[#DFD7C4]">
               <button

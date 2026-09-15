@@ -32,7 +32,7 @@ export const FactoryFarmers: React.FC = () => {
       totalSuppliedKg,
       totalPayout,
     };
-  });
+  }).filter((item) => item.plotsCount > 0 || item.procurementCount > 0);
 
   const filtered = supplierStats.filter((item) => {
     const q = searchQuery.toLowerCase();
@@ -53,7 +53,7 @@ export const FactoryFarmers: React.FC = () => {
           Supplying Farmers Directory
         </h2>
         <p className="text-xs text-slate-500 mt-1">
-          Registered rural smallholders supplying sugarcane, cotton, oilseeds, and plantation crops to your processing mill.
+          Farmers with crop lots compatible with this processing facility.
         </p>
       </div>
 

@@ -7,7 +7,6 @@ import { JudgeDemoModal } from '../components/layout/JudgeDemoModal';
 import {
   Sprout,
   User,
-  ShieldCheck,
   Factory,
   ArrowRight,
   Lock,
@@ -23,7 +22,9 @@ export const LoginPage: React.FC = () => {
   const { showToast } = useToast();
 
   const urlParams = new URLSearchParams(window.location.search);
-  const initialRole = (urlParams.get('role') as UserRole) || 'farmer';
+  type PortalRole = Extract<UserRole, 'farmer' | 'factory'>;
+  const requestedRole = urlParams.get('role');
+  const initialRole: PortalRole = requestedRole === 'factory' ? 'factory' : 'farmer';
   const redirectTarget = urlParams.get('redirect');
 
   // Quick fill accounts per role
@@ -33,11 +34,6 @@ export const LoginPage: React.FC = () => {
       subtext: 'Sugarcane Farmer • Kolhapur',
       email: 'ramesh.patel@agrilink.in',
     },
-    officer: {
-      name: 'Rajesh Sharma',
-      subtext: 'Agronomist / Field Officer',
-      email: 'rajesh.sharma@agrilink.gov.in',
-    },
     factory: {
       name: 'Sahyadri Cooperative Sugar Mill',
       subtext: 'Processing Unit • Kolhapur',
@@ -45,7 +41,7 @@ export const LoginPage: React.FC = () => {
     },
   };
 
-  const [selectedRole, setSelectedRole] = useState<UserRole>(initialRole);
+  const [selectedRole, setSelectedRole] = useState<PortalRole>(initialRole);
   const [identifier, setIdentifier] = useState(demoAccounts[initialRole]?.email || 'ramesh.patel@agrilink.in');
   const [password, setPassword] = useState('demo123');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +62,7 @@ export const LoginPage: React.FC = () => {
     }
   }, [isAuthenticated, currentUser, redirectTarget]);
 
-  const handleRoleTabChange = (role: UserRole) => {
+  const handleRoleTabChange = (role: PortalRole) => {
     setSelectedRole(role);
     setErrorMessage(null);
     // Autofill helper placeholder or email for convenience if empty or previous demo email
@@ -112,7 +108,7 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleQuickDemoAccess = async (role: UserRole) => {
+  const handleQuickDemoAccess = async (role: PortalRole) => {
     setIsSubmitting(true);
     try {
       const res = await loginAsDemo(role);
@@ -188,10 +184,9 @@ export const LoginPage: React.FC = () => {
             <label className="text-[11px] uppercase font-bold tracking-wider text-[#777268] block mb-2">
               Select Your Role
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {[
                 { id: 'farmer', label: 'Farmer', icon: User },
-                { id: 'officer', label: 'Field Officer', icon: ShieldCheck },
                 { id: 'factory', label: 'Factory', icon: Factory },
               ].map((r) => {
                 const Icon = r.icon;
@@ -200,7 +195,7 @@ export const LoginPage: React.FC = () => {
                   <button
                     key={r.id}
                     type="button"
-                    onClick={() => handleRoleTabChange(r.id as UserRole)}
+                    onClick={() => handleRoleTabChange(r.id as PortalRole)}
                     className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center gap-1 transition-all ${
                       isSelected
                         ? 'bg-[#173522] text-[#EBE5D6] shadow-sm'
@@ -342,4 +337,3 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
-

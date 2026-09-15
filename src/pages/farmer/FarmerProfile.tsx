@@ -60,7 +60,7 @@ export const FarmerProfile: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-1.5 text-[11px] text-[#173522] bg-[#F3EFE4] px-2.5 py-0.5 rounded-full mb-1 border border-[#DFD7C4] font-sans font-semibold">
               <CheckCircle2 className="w-3 h-3 text-[#D97824]" />
-              Verified AgriLink Farmer Identity
+              Registered AgriLink Farmer
             </div>
             <h2 className="text-2xl font-serif font-bold text-[#173522]">{fullName}</h2>
             <p className="text-xs text-[#777268] font-sans mt-0.5">
@@ -91,7 +91,7 @@ export const FarmerProfile: React.FC = () => {
         <div>
           <h3 className="text-lg font-serif font-bold text-[#173522]">Personal &amp; Contact Details</h3>
           <p className="text-xs text-[#777268] font-sans mt-0.5">
-            These details are shared with authorized Field Officers and Sugar/Cotton/Oilseed mills during procurement.
+            These details are shared with the processing factory selected for procurement.
           </p>
         </div>
 

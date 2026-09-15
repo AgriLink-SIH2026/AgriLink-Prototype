@@ -5,22 +5,15 @@ export const STANDARD_STAGES: WorkflowStageDefinition[] = [
   {
     id: 'Crop Registered',
     label: 'Crop Registered',
-    shortDescription: 'Farmer submitted crop details with geotagged photo proof',
+    shortDescription: 'Farmer submitted crop and expected harvest details',
     roleResponsible: 'farmer',
-  },
-  {
-    id: 'Field Verified',
-    label: 'Field Verified',
-    shortDescription: 'Field Officer inspected geotagged field and approved legitimacy',
-    roleResponsible: 'officer',
-    requiredPreviousStage: 'Crop Registered',
   },
   {
     id: 'Procurement Pending',
     label: 'Procurement Pending',
-    shortDescription: 'Verified crop queued for processing factory intake',
+    shortDescription: 'Registered crop queued for processing factory intake',
     roleResponsible: 'factory',
-    requiredPreviousStage: 'Field Verified',
+    requiredPreviousStage: 'Crop Registered',
   },
   {
     id: 'Procurement Scheduled',
@@ -37,25 +30,11 @@ export const STANDARD_STAGES: WorkflowStageDefinition[] = [
     requiredPreviousStage: 'Procurement Scheduled',
   },
   {
-    id: 'Transport Assigned',
-    label: 'Transport Assigned',
-    shortDescription: 'Factory or logistics partner vehicle and driver assigned for farm pickup',
-    roleResponsible: 'factory',
-    requiredPreviousStage: 'Harvest Scheduled',
-  },
-  {
-    id: 'In Transit',
-    label: 'In Transit',
-    shortDescription: 'Produce loaded and en route to the factory procurement center',
-    roleResponsible: 'factory',
-    requiredPreviousStage: 'Transport Assigned',
-  },
-  {
     id: 'Arrived at Procurement Center',
     label: 'Arrived at Procurement Center',
-    shortDescription: 'Vehicle checked in at mill weighbridge gate',
+    shortDescription: 'Farmer checked in for the booked intake slot',
     roleResponsible: 'factory',
-    requiredPreviousStage: 'In Transit',
+    requiredPreviousStage: 'Harvest Scheduled',
   },
   {
     id: 'Quality Check',
@@ -102,7 +81,7 @@ export const STANDARD_STAGES: WorkflowStageDefinition[] = [
   },
 ];
 
-export const CROP_WORKFLOWS: Record<CropType, CropWorkflowConfig> = {
+export const CROP_WORKFLOWS: Partial<Record<CropType, CropWorkflowConfig>> = {
   Sugarcane: {
     cropType: 'Sugarcane',
     industry: 'Sugar Industry',

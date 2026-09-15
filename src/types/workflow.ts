@@ -4,7 +4,7 @@ export interface WorkflowStageDefinition {
   id: ProcurementStatus;
   label: string;
   shortDescription: string;
-  roleResponsible: 'farmer' | 'officer' | 'factory';
+  roleResponsible: 'farmer' | 'factory';
   requiredPreviousStage?: ProcurementStatus;
   isTerminal?: boolean;
 }

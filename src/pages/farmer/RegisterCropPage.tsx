@@ -4,9 +4,6 @@ import { useAppData } from '../../context/AppDataContext';
 import { useToast } from '../../context/ToastContext';
 import { SUPPORTED_CROPS, CROP_LIST } from '../../config/crops';
 import { CropType } from '../../types';
-import { GeotagUpload } from '../../components/farmer/GeotagUpload';
-import { GeoPositionResult } from '../../services/geolocation';
-import { MapView } from '../../components/common/MapView';
 import { navigate } from '../../utils/navigation';
 import {
   Sprout,
@@ -46,11 +43,6 @@ export const RegisterCropPage: React.FC = () => {
     'Well drained fertile plot with drip irrigation. Pre-monsoon sowing.'
   );
 
-  // GPS & Image Evidence State
-  const [location, setLocation] = useState<GeoPositionResult | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(
-    'https://images.unsplash.com/photo-1594488518001-3e479a8e97f0?w=800&auto=format&fit=crop&q=80'
-  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedCropId, setSubmittedCropId] = useState<string | null>(null);
 
@@ -67,16 +59,6 @@ export const RegisterCropPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!location) {
-      showToast('Please capture real GPS coordinates using the button in Step 1.', 'warning');
-      return;
-    }
-
-    if (!imageUrl) {
-      showToast('Please upload a sown crop photograph in Step 2.', 'warning');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const created = await registerCrop({
@@ -90,10 +72,6 @@ export const RegisterCropPage: React.FC = () => {
         district,
         state,
         notes,
-        imageUrl,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        locationAccuracy: location.accuracy,
       });
 
       setSubmittedCropId(created.id);
@@ -111,13 +89,13 @@ export const RegisterCropPage: React.FC = () => {
       <div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F3EFE4] border border-[#DFD7C4] text-[#173522] text-xs font-semibold mb-2">
           <span className="w-1.5 h-1.5 rounded-full bg-[#D97824]" />
-          Field Onboarding &amp; Geotagging
+          Simple Crop Onboarding
         </div>
         <h2 className="text-3xl font-serif font-bold text-[#173522] tracking-tight">
           Register New Crop Plot
         </h2>
         <p className="text-xs font-sans text-[#777268] mt-1">
-          Digitize your agricultural plot with mandatory GPS geotagging for swift field officer verification and factory procurement allocation.
+          Register crop and harvest details, then compare processors and book an intake slot directly.
         </p>
       </div>
 
@@ -136,11 +114,11 @@ export const RegisterCropPage: React.FC = () => {
               Crop ID: {submittedCropId}
             </h3>
             <p className="text-xs font-sans text-[#777268] mt-2 max-w-md mx-auto">
-              Your <strong>{cropType}</strong> plot in {village}, {district} has been registered with status{' '}
+              Your <strong>{cropType}</strong> crop in {village}, {district} is now{' '}
               <span className="inline-block font-semibold text-[#D97824] bg-[#F3EFE4] border border-[#DFD7C4] px-2 py-0.5 rounded">
-                Pending Verification
+                Registered
               </span>
-              . Local field officers have been notified.
+              {' '}and ready for processor comparison and intake booking.
             </p>
           </div>
 
@@ -154,7 +132,6 @@ export const RegisterCropPage: React.FC = () => {
             <button
               onClick={() => {
                 setSubmittedCropId(null);
-                setLocation(null);
               }}
               className="px-5 py-2.5 bg-[#F3EFE4] hover:bg-[#EBE5D6] text-[#173522] border border-[#DFD7C4] rounded-xl text-xs font-semibold transition cursor-pointer"
             >
@@ -320,41 +297,6 @@ export const RegisterCropPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Part C: Real Geotagged Image & GPS Capture */}
-          <div className="pt-4 border-t border-[#DFD7C4]">
-            <GeotagUpload
-              currentLocation={location}
-              currentImage={imageUrl}
-              onLocationCaptured={(pos) => setLocation(pos)}
-              onImageSelected={(img) => setImageUrl(img)}
-            />
-          </div>
-
-          {/* If location is captured, show live Leaflet preview */}
-          {location && (
-            <div className="space-y-2 animate-in fade-in">
-              <span className="text-xs font-serif font-bold text-[#173522] block">
-                Field GPS Plot Confirmation
-              </span>
-              <div className="rounded-2xl overflow-hidden border border-[#DFD7C4]">
-                <MapView
-                  center={[location.latitude, location.longitude]}
-                  zoom={14}
-                  height="200px"
-                  markers={[
-                    {
-                      lat: location.latitude,
-                      lng: location.longitude,
-                      title: `${cropType} Plot`,
-                      subtitle: `GPS Pin: ${location.latitude}, ${location.longitude}`,
-                      type: 'crop',
-                    },
-                  ]}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Submit Button */}
           <div className="pt-4 border-t border-[#DFD7C4] flex items-center justify-between font-sans">
             <button
@@ -374,7 +316,7 @@ export const RegisterCropPage: React.FC = () => {
                 <span>Registering Crop...</span>
               ) : (
                 <>
-                  <span>Submit Geotagged Registration</span>
+                  <span>Submit Crop Registration</span>
                   <ArrowRight className="w-4 h-4 text-[#D97824]" />
                 </>
               )}

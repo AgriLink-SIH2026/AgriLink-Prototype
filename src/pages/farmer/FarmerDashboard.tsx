@@ -29,6 +29,9 @@ export const FarmerDashboard: React.FC = () => {
   const myCrops = currentUser
     ? crops.filter((c) => c.farmerId === currentUser.id || c.farmerName === currentUser.name)
     : [];
+  const dashboardCrops = myCrops
+    .filter((crop, index, all) => all.findIndex((item) => item.cropType === crop.cropType) === index)
+    .slice(0, 4);
 
   // Filter procurements belonging to this farmer
   const myProcurements = currentUser
@@ -37,10 +40,6 @@ export const FarmerDashboard: React.FC = () => {
 
   // KPI Metrics
   const registeredCount = myCrops.length;
-  const verifiedCount = myCrops.filter((c) => c.status === 'Verified').length;
-  const pendingVerificationCount = myCrops.filter(
-    (c) => c.status === 'Pending Verification' || c.status === 'Re-verification Required'
-  ).length;
   const activeProcurementCount = myProcurements.filter(
     (p) => p.currentStatus !== 'Completed'
   ).length;
@@ -134,22 +133,22 @@ export const FarmerDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: Verified Crops */}
+        {/* Card 2: Marketplace-ready crops */}
         <div className="bg-[#EBE5D6] p-5 rounded-3xl border border-[#DFD7C4] flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#777268]">
-              VERIFIED CROPS
+              READY TO COMPARE
             </span>
             <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#FAF7F0] text-[#777268] border border-[#DFD7C4]">
-              {verifiedCount > 0 ? 'ACTIVE' : 'IDLE'}
+              {registeredCount > 0 ? 'ACTIVE' : 'IDLE'}
             </span>
           </div>
           <div>
             <p className="font-serif text-4xl font-black text-[#171713] mb-1">
-              {verifiedCount}
+              {registeredCount}
             </p>
             <p className="text-xs text-[#777268]">
-              {verifiedCount === 0 ? 'Nothing verified yet' : `${verifiedCount} plot(s) approved by officer`}
+              {registeredCount === 0 ? 'Register a crop to begin' : `${registeredCount} crop lot(s) marketplace-ready`}
             </p>
           </div>
         </div>
@@ -169,27 +168,27 @@ export const FarmerDashboard: React.FC = () => {
               {activeProcurementCount}
             </p>
             <p className="text-xs text-[#777268]">
-              {activeProcurementCount === 0 ? 'Nothing in progress' : `${activeProcurementCount} consignment(s) moving`}
+              {activeProcurementCount === 0 ? 'Nothing in progress' : `${activeProcurementCount} intake lot(s) active`}
             </p>
           </div>
         </div>
 
-        {/* Card 4: Pending Actions */}
+        {/* Card 4: Completed procurements */}
         <div className="bg-[#EBE5D6] p-5 rounded-3xl border border-[#DFD7C4] flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#777268]">
-              PENDING ACTIONS
+              COMPLETED
             </span>
             <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#FAF7F0] text-[#777268] border border-[#DFD7C4]">
-              {pendingVerificationCount > 0 ? 'ATTENTION' : 'IDLE'}
+              {completedProcurementCount > 0 ? 'SETTLED' : 'IDLE'}
             </span>
           </div>
           <div>
             <p className="font-serif text-4xl font-black text-[#171713] mb-1">
-              {pendingVerificationCount}
+              {completedProcurementCount}
             </p>
             <p className="text-xs text-[#777268]">
-              {pendingVerificationCount === 0 ? "You're all caught up" : `${pendingVerificationCount} awaiting field check`}
+              {completedProcurementCount === 0 ? 'No settled lots yet' : `${completedProcurementCount} lot(s) paid and archived`}
             </p>
           </div>
         </div>
@@ -205,8 +204,8 @@ export const FarmerDashboard: React.FC = () => {
             No procurement activity yet
           </h3>
           <p className="text-xs sm:text-sm text-[#777268] max-w-md mx-auto leading-relaxed mb-6">
-            Register a crop and when a field officer verifies it, your mill intake schedule,
-            transport vehicle assignments, and weighment progress will appear here.
+            Register a crop, compare processor bids, and book an intake slot. Scheduling,
+            weighment, billing, and payment progress will appear here.
           </p>
           <a
             href="/farmer/crops/register"
@@ -250,7 +249,7 @@ export const FarmerDashboard: React.FC = () => {
           </div>
 
           {/* Quick Metrics of Active Procurement */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div className="p-3.5 bg-[#EBE5D6] rounded-2xl border border-[#DFD7C4]">
               <span className="text-[10px] uppercase font-bold text-[#777268] block mb-1">
                 Scheduled Intake Date
@@ -266,15 +265,6 @@ export const FarmerDashboard: React.FC = () => {
               </span>
               <p className="font-serif text-base font-bold text-[#171713]">
                 {firstProcurement.landArea} {firstProcurement.landUnit}
-              </p>
-            </div>
-
-            <div className="p-3.5 bg-[#EBE5D6] rounded-2xl border border-[#DFD7C4]">
-              <span className="text-[10px] uppercase font-bold text-[#777268] block mb-1">
-                Transport Vehicle
-              </span>
-              <p className="font-mono text-sm font-bold text-[#171713]">
-                {firstProcurement.transport?.vehicleNumber || 'Pending Dispatch'}
               </p>
             </div>
 
@@ -300,9 +290,9 @@ export const FarmerDashboard: React.FC = () => {
       )}
 
       {/* Two Columns: Registered Crops List & Smart Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.8fr)_minmax(320px,1fr)] gap-6">
         {/* Left 2 Cols: Registered Crops */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="space-y-4 min-w-0">
           <div className="bg-[#FAF7F0] p-6 rounded-3xl border border-[#DFD7C4] shadow-2xs">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -310,7 +300,7 @@ export const FarmerDashboard: React.FC = () => {
                   My Registered Crops
                 </h3>
                 <p className="text-xs text-[#777268]">
-                  Verified plots and inspection status
+                  Crop lots ready for processor comparison
                 </p>
               </div>
               <a
@@ -327,33 +317,30 @@ export const FarmerDashboard: React.FC = () => {
                 <Sprout className="w-8 h-8 text-[#777268]/40 mx-auto mb-2" />
                 <p className="text-xs text-[#171713] font-bold">No registered crops yet</p>
                 <p className="text-xs text-[#777268] mt-0.5">
-                  Register your sown fields with geotagged photographic proof.
+                  Register crop and harvest details without uploading a field photo.
                 </p>
               </div>
             ) : (
               <div className="divide-y divide-[#DFD7C4]">
-                {myCrops.slice(0, 3).map((crop) => (
+                {dashboardCrops.map((crop) => (
                   <div
                     key={crop.id}
                     className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-14 h-14 rounded-2xl bg-[#EBE5D6] overflow-hidden shrink-0 border border-[#DFD7C4]">
-                        <img
-                          src={crop.imageUrl}
-                          alt={crop.cropType}
-                          className="w-full h-full object-cover"
-                        />
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-14 h-14 rounded-2xl bg-[#EBE5D6] shrink-0 border border-[#DFD7C4] flex flex-col items-center justify-center text-[#173522]">
+                        <Sprout className="w-5 h-5" />
+                        <span className="text-[9px] font-bold mt-0.5">{crop.cropType.slice(0, 3).toUpperCase()}</span>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <h4 className="font-serif text-sm font-bold text-[#171713]">
                             {crop.cropType}
                           </h4>
                           <span className="text-xs text-[#777268]">({crop.variety})</span>
                           <span className="text-[10px] font-mono text-[#777268]/70">{crop.id}</span>
                         </div>
-                        <p className="text-xs text-[#777268] mt-0.5 flex items-center gap-2">
+                        <p className="text-xs text-[#777268] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                           <span>{crop.landArea} {crop.landUnit}</span>
                           <span>•</span>
                           <span>Sown: {crop.sowingDate}</span>
@@ -365,14 +352,7 @@ export const FarmerDashboard: React.FC = () => {
 
                     <div className="flex items-center gap-3 self-end sm:self-auto">
                       <StatusBadge status={crop.status} size="sm" />
-                      {crop.status === 'Verified' && (
-                        <a
-                          href="/farmer/procurement"
-                          className="px-3 py-1.5 bg-[#EBE5D6] hover:bg-[#173522] hover:text-white text-[#173522] rounded-xl text-xs font-semibold transition"
-                        >
-                          Procurement &rarr;
-                        </a>
-                      )}
+                      <a href="/farmer/marketplace" className="px-3 py-1.5 bg-[#EBE5D6] hover:bg-[#173522] hover:text-white text-[#173522] rounded-xl text-xs font-semibold transition">Compare processors &rarr;</a>
                     </div>
                   </div>
                 ))}
@@ -382,7 +362,7 @@ export const FarmerDashboard: React.FC = () => {
         </div>
 
         {/* Right 1 Col: Insights / Passbook */}
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           <div className="bg-[#FAF7F0] p-6 rounded-3xl border border-[#DFD7C4] shadow-2xs">
             <h3 className="font-serif text-base font-bold text-[#171713] mb-1">
               Farmer Profile Status
@@ -418,4 +398,3 @@ export const FarmerDashboard: React.FC = () => {
     </div>
   );
 };
-

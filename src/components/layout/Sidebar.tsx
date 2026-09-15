@@ -6,13 +6,10 @@ import {
   PlusCircle,
   Sprout,
   Milestone,
-  Building2,
+  Store,
   Bell,
   Users,
-  CheckSquare,
-  FileText,
   Calendar,
-  Truck,
   Scale,
   Receipt,
   BarChart3,
@@ -35,44 +32,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     { label: 'Register Crop', path: '/farmer/crops/register', icon: PlusCircle, highlight: true },
     { label: 'My Crops', path: '/farmer/crops', icon: Sprout },
     { label: 'Procurement Status', path: '/farmer/procurement', icon: Milestone },
-    { label: 'Factory Locator', path: '/farmer/factories', icon: Building2 },
+    { label: 'Factory Marketplace', path: '/farmer/marketplace', icon: Store, highlight: true },
     { label: 'Notifications', path: '/farmer/notifications', icon: Bell },
-  ];
-
-  const officerNav = [
-    { label: 'Dashboard', path: '/officer/dashboard', icon: LayoutDashboard },
-    { label: 'Farmers', path: '/officer/farmers', icon: Users },
-    { label: 'Pending Verification', path: '/officer/verification', icon: CheckSquare, highlight: true },
-    { label: 'Inspection Reports', path: '/officer/inspection-reports', icon: FileText },
-    { label: 'Notifications', path: '/officer/notifications', icon: Bell },
   ];
 
   const factoryNav = [
     { label: 'Dashboard', path: '/factory/dashboard', icon: LayoutDashboard },
     { label: 'Farmers', path: '/factory/farmers', icon: Users },
-    { label: 'Verified Crops', path: '/factory/crops', icon: Sprout },
+    { label: 'Registered Crops', path: '/factory/crops', icon: Sprout },
     { label: 'Procurement Queue', path: '/factory/procurement', icon: Milestone, highlight: true },
     { label: 'Scheduling', path: '/factory/scheduling', icon: Calendar },
-    { label: 'Transport', path: '/factory/transport', icon: Truck },
     { label: 'Quality & Weighment', path: '/factory/quality', icon: Scale },
     { label: 'Billing & Invoices', path: '/factory/billing', icon: Receipt },
     { label: 'Analytics', path: '/factory/analytics', icon: BarChart3 },
     { label: 'Notifications', path: '/factory/notifications', icon: Bell },
   ];
 
-  const navItems =
-    currentUser.role === 'farmer'
-      ? farmerNav
-      : currentUser.role === 'officer'
-      ? officerNav
-      : factoryNav;
+  const navItems = currentUser.role === 'farmer' ? farmerNav : factoryNav;
 
-  const workspaceLabel =
-    currentUser.role === 'farmer'
-      ? 'FARMER WORKSPACE'
-      : currentUser.role === 'officer'
-      ? 'OFFICER WORKSPACE'
-      : 'FACTORY WORKSPACE';
+  const workspaceLabel = currentUser.role === 'farmer' ? 'FARMER WORKSPACE' : 'FACTORY WORKSPACE';
 
   return (
     <>
@@ -178,4 +156,3 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     </>
   );
 };
-

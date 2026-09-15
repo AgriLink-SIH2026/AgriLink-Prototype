@@ -9,7 +9,6 @@ import { ProcurementRecord } from '../../types';
 import { navigate } from '../../utils/navigation';
 import {
   Milestone,
-  Truck,
   Scale,
   Receipt,
   CheckCircle2,
@@ -51,7 +50,7 @@ export const FarmerProcurement: React.FC = () => {
       <div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F3EFE4] border border-[#DFD7C4] text-[#173522] text-xs font-semibold mb-2">
           <span className="w-1.5 h-1.5 rounded-full bg-[#D97824]" />
-          Supply Chain Transparency &amp; Traceability
+          Procurement Transparency &amp; Traceability
         </div>
         <h2 className="text-3xl font-serif font-bold text-[#173522] tracking-tight">
           Procurement Status &amp; History
@@ -68,8 +67,7 @@ export const FarmerProcurement: React.FC = () => {
           </div>
           <h3 className="text-base font-serif font-bold text-[#173522]">No active procurements yet</h3>
           <p className="text-xs font-sans text-[#777268] mt-1 max-w-md mx-auto">
-            Once a Field Officer marks your crop as "Verified", processing factories can allocate intake
-            slots and dispatch pickup transport.
+            Register a crop, compare processor bids, and book an intake slot to begin procurement.
           </p>
           <button
             onClick={() => navigate('/farmer/crops')}
@@ -157,33 +155,6 @@ export const FarmerProcurement: React.FC = () => {
 
                 {/* Right 1 Col: Quality, Weighment & Billing Certificates */}
                 <div className="space-y-5 lg:border-l lg:border-[#DFD7C4] lg:pl-8 font-sans">
-                  {/* Transport Card */}
-                  {activeRecord.transport && (
-                    <div className="p-4.5 rounded-2xl bg-[#F3EFE4] border border-[#DFD7C4] space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#173522] flex items-center gap-1.5">
-                          <Truck className="w-4 h-4 text-[#D97824]" />
-                          <span>Assigned Transport</span>
-                        </span>
-                        <span className="text-[10px] font-bold text-[#173522] bg-white border border-[#DFD7C4] px-2 py-0.5 rounded-full">
-                          {activeRecord.transport.status}
-                        </span>
-                      </div>
-                      <div className="text-xs text-[#777268] space-y-0.5">
-                        <p>
-                          <strong className="text-[#173522]">Vehicle:</strong> {activeRecord.transport.vehicleNumber}
-                        </p>
-                        <p>
-                          <strong className="text-[#173522]">Driver:</strong> {activeRecord.transport.driverName} (
-                          {activeRecord.transport.driverPhone})
-                        </p>
-                        <p>
-                          <strong className="text-[#173522]">Destination:</strong> {activeRecord.transport.destination}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Quality Card */}
                   {activeRecord.quality ? (
                     <div className="p-4.5 rounded-2xl bg-[#F3EFE4] border border-[#DFD7C4] space-y-2">

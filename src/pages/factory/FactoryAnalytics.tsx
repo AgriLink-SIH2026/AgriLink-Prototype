@@ -29,12 +29,12 @@ export const FactoryAnalytics: React.FC = () => {
 
   // 1. Core KPIs calculated directly from live database state
   const totalFarmers = new Set(crops.map((c) => c.farmerId)).size;
-  const verifiedCropsCount = crops.filter((c) => c.status === 'Verified').length;
+  const registeredCropsCount = crops.filter((c) => c.status === 'Registered').length;
   const totalProcurementsCount = procurements.length;
   const completedProcurementsCount = procurements.filter(
     (p) => p.currentStatus === 'Completed'
   ).length;
-  const pendingProcurementCount = Math.max(0, verifiedCropsCount - totalProcurementsCount);
+  const pendingProcurementCount = Math.max(0, registeredCropsCount - totalProcurementsCount);
 
   const totalQuantityProcuredKg = procurements.reduce(
     (sum, p) => sum + (p.weighment?.netWeightKg || 0),
@@ -107,11 +107,11 @@ export const FactoryAnalytics: React.FC = () => {
 
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-semibold">Verified Crop Plots</span>
+            <span className="text-xs font-semibold">Registered Crop Lots</span>
             <Sprout className="w-4 h-4 text-blue-600" />
           </div>
-          <p className="text-2xl font-extrabold text-blue-600">{verifiedCropsCount}</p>
-          <span className="text-[10px] text-slate-400 mt-1 block">Officer approved</span>
+          <p className="text-2xl font-extrabold text-blue-600">{registeredCropsCount}</p>
+          <span className="text-[10px] text-slate-400 mt-1 block">Direct farmer registrations</span>
         </div>
 
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">

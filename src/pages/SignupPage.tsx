@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { UserRole } from '../types';
-import { Sprout, User, ShieldCheck, Factory, Mail, Phone, Lock, UserPlus } from 'lucide-react';
+import { Sprout, User, Factory, Mail, Phone, Lock, UserPlus } from 'lucide-react';
 
 export const SignupPage: React.FC = () => {
   const { signup } = useAuth();
@@ -62,10 +62,9 @@ export const SignupPage: React.FC = () => {
             <label className="text-xs font-bold text-slate-700 block mb-2">
               Select Your Role (Persisted in Database)
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {[
                 { id: 'farmer', label: 'Farmer', icon: User },
-                { id: 'officer', label: 'Officer', icon: ShieldCheck },
                 { id: 'factory', label: 'Factory', icon: Factory },
               ].map((r) => {
                 const Icon = r.icon;
@@ -79,8 +78,6 @@ export const SignupPage: React.FC = () => {
                       isSelected
                         ? r.id === 'farmer'
                           ? 'bg-emerald-600 text-white shadow-sm'
-                          : r.id === 'officer'
-                          ? 'bg-blue-600 text-white shadow-sm'
                           : 'bg-amber-600 text-white shadow-sm'
                         : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
                     }`}

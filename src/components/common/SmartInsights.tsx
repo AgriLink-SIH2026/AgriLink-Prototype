@@ -41,17 +41,17 @@ export const SmartInsights: React.FC<SmartInsightsProps> = ({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <Sparkles className="w-4 h-4 text-amber-500" />
           <h4 className="text-sm font-bold text-slate-900">{title}</h4>
         </div>
-        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200 whitespace-normal text-center">
           Rule-Based AI Engine
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 min-w-0">
         {insights.map((item) => (
           <div
             key={item.id}
@@ -60,23 +60,23 @@ export const SmartInsights: React.FC<SmartInsightsProps> = ({
             )}`}
           >
             <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2 min-w-0">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800 min-w-0">
                   {getCategoryIcon(item.category)}
                   <span>{item.category}</span>
                 </div>
                 {/* STRICT REQUIRED BADGE LABEL */}
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-100/90 border border-amber-300/80 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-amber-700 bg-amber-100/90 border border-amber-300/80 px-2 py-1 rounded-full whitespace-normal text-center">
                   Smart Insight — Prototype
                 </span>
               </div>
 
               <h5 className="text-sm font-bold text-slate-900 leading-snug">{item.title}</h5>
-              <p className="text-xs text-slate-600 mt-1 leading-relaxed">{item.description}</p>
+              <p className="text-sm text-slate-600 mt-1 leading-relaxed break-words">{item.description}</p>
             </div>
 
             <div className="mt-3 pt-3 border-t border-slate-200/60">
-              <p className="text-[11px] text-slate-700 font-medium">
+              <p className="text-xs text-slate-700 font-medium leading-relaxed break-words">
                 <strong className="text-slate-900">Action:</strong> {item.recommendation}
               </p>
               <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">

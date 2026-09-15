@@ -1,4 +1,4 @@
-export type UserRole = 'farmer' | 'officer' | 'factory';
+export type UserRole = 'farmer' | 'factory';
 
 export interface User {
   id: string;
@@ -28,6 +28,13 @@ export interface FarmerProfile {
 export type CropType =
   | 'Sugarcane'
   | 'Cotton'
+  | 'Wheat'
+  | 'Barley'
+  | 'Rice'
+  | 'Maize'
+  | 'Bajra'
+  | 'Chana'
+  | 'Tur Dal'
   | 'Mustard'
   | 'Soybean'
   | 'Sunflower'
@@ -35,11 +42,7 @@ export type CropType =
   | 'Tea'
   | 'Coffee';
 
-export type CropStatus =
-  | 'Pending Verification'
-  | 'Verified'
-  | 'Rejected'
-  | 'Re-verification Required';
+export type CropStatus = 'Registered';
 
 export interface CropRegistration {
   id: string; // e.g., AGRI-CROP-2026-0001
@@ -58,11 +61,11 @@ export interface CropRegistration {
   notes?: string;
   status: CropStatus;
   registrationDate: string;
-  imageUrl: string;
-  latitude: number;
-  longitude: number;
+  imageUrl?: string;
+  latitude?: number;
+  longitude?: number;
   locationAccuracy?: number;
-  capturedAt: string;
+  capturedAt?: string;
   verificationDate?: string;
   verifiedByOfficerId?: string;
   verifiedByOfficerName?: string;
@@ -73,12 +76,9 @@ export interface CropRegistration {
 
 export type ProcurementStatus =
   | 'Crop Registered'
-  | 'Field Verified'
   | 'Procurement Pending'
   | 'Procurement Scheduled'
   | 'Harvest Scheduled'
-  | 'Transport Assigned'
-  | 'In Transit'
   | 'Arrived at Procurement Center'
   | 'Quality Check'
   | 'Weighment'
@@ -86,18 +86,6 @@ export type ProcurementStatus =
   | 'Billing'
   | 'Payment Processed'
   | 'Completed';
-
-export interface TransportRecord {
-  id: string;
-  vehicleNumber: string;
-  driverName: string;
-  driverPhone: string;
-  pickupDate: string;
-  pickupLocation: string;
-  destination: string;
-  status: 'Not Assigned' | 'Assigned' | 'In Transit' | 'Arrived' | 'Completed';
-  assignedAt: string;
-}
 
 export interface QualityRecord {
   id: string;
@@ -162,7 +150,6 @@ export interface ProcurementRecord {
   remarks?: string;
   createdAt: string;
   updatedAt: string;
-  transport?: TransportRecord;
   quality?: QualityRecord;
   weighment?: WeighmentRecord;
   bill?: BillRecord;
@@ -190,7 +177,7 @@ export interface Notification {
   recipientRole: UserRole;
   title: string;
   message: string;
-  category: 'crop' | 'verification' | 'procurement' | 'transport' | 'quality' | 'payment' | 'system';
+  category: 'crop' | 'procurement' | 'quality' | 'payment' | 'system';
   isRead: boolean;
   createdAt: string;
   channels: {
@@ -204,7 +191,7 @@ export interface Notification {
 export interface FactoryInfo {
   id: string;
   name: string;
-  industryType: 'Sugar' | 'Textile' | 'Oilseed' | 'Tea & Coffee';
+  industryType: 'Sugar' | 'Textile' | 'Oilseed' | 'Tea & Coffee' | 'Grain' | 'Pulses';
   supportedCrops: CropType[];
   district: string;
   state: string;

@@ -18,14 +18,14 @@ import {
 } from './seedData';
 
 const STORAGE_KEYS = {
-  USERS: 'agrilink_users_v1',
-  CURRENT_USER: 'agrilink_current_user_v1',
+  USERS: 'agrilink_users_v2',
+  CURRENT_USER: 'agrilink_current_user_v2',
   FARMER_PROFILES: 'agrilink_farmer_profiles_v1',
   FACTORIES: 'agrilink_factories_v1',
-  CROPS: 'agrilink_crops_v1',
-  PROCUREMENTS: 'agrilink_procurements_v1',
-  INSPECTIONS: 'agrilink_inspections_v1',
-  NOTIFICATIONS: 'agrilink_notifications_v1',
+  CROPS: 'agrilink_crops_v4',
+  PROCUREMENTS: 'agrilink_procurements_v3',
+  INSPECTIONS: 'agrilink_inspections_v2',
+  NOTIFICATIONS: 'agrilink_notifications_v3',
 };
 
 // Initialize default storage with seed data if empty

@@ -18,15 +18,8 @@ import { FarmerProfile } from './pages/farmer/FarmerProfile';
 import { FarmerCrops } from './pages/farmer/FarmerCrops';
 import { RegisterCropPage } from './pages/farmer/RegisterCropPage';
 import { FarmerProcurement } from './pages/farmer/FarmerProcurement';
-import { FactoryLocator } from './pages/farmer/FactoryLocator';
+import { FarmerMarketplace } from './pages/farmer/FarmerMarketplace';
 import { FarmerNotifications } from './pages/farmer/FarmerNotifications';
-
-// Officer Pages
-import { OfficerDashboard } from './pages/officer/OfficerDashboard';
-import { OfficerFarmers } from './pages/officer/OfficerFarmers';
-import { OfficerVerification } from './pages/officer/OfficerVerification';
-import { OfficerReports } from './pages/officer/OfficerReports';
-import { OfficerNotifications } from './pages/officer/OfficerNotifications';
 
 // Factory Pages
 import { FactoryDashboard } from './pages/factory/FactoryDashboard';
@@ -34,7 +27,6 @@ import { FactoryFarmers } from './pages/factory/FactoryFarmers';
 import { FactoryCrops } from './pages/factory/FactoryCrops';
 import { FactoryProcurement } from './pages/factory/FactoryProcurement';
 import { FactoryScheduling } from './pages/factory/FactoryScheduling';
-import { FactoryTransport } from './pages/factory/FactoryTransport';
 import { FactoryQuality } from './pages/factory/FactoryQuality';
 import { FactoryBilling } from './pages/factory/FactoryBilling';
 import { FactoryAnalytics } from './pages/factory/FactoryAnalytics';
@@ -107,7 +99,9 @@ const Router: React.FC = () => {
               case '/farmer/procurement':
                 return <FarmerProcurement />;
               case '/farmer/factories':
-                return <FactoryLocator />;
+                return <FarmerMarketplace />;
+              case '/farmer/marketplace':
+                return <FarmerMarketplace />;
               case '/farmer/notifications':
                 return <FarmerNotifications />;
               default:
@@ -118,31 +112,7 @@ const Router: React.FC = () => {
       );
     }
 
-    // 3. Officer Routes (Protected, role = officer)
-    if (currentPath.startsWith('/officer/')) {
-      return (
-        <ProtectedRoute allowedRole="officer" currentPath={currentPath}>
-          {(() => {
-            switch (currentPath) {
-              case '/officer/dashboard':
-                return <OfficerDashboard />;
-              case '/officer/farmers':
-                return <OfficerFarmers />;
-              case '/officer/verification':
-                return <OfficerVerification />;
-              case '/officer/inspection-reports':
-                return <OfficerReports />;
-              case '/officer/notifications':
-                return <OfficerNotifications />;
-              default:
-                return <OfficerDashboard />;
-            }
-          })()}
-        </ProtectedRoute>
-      );
-    }
-
-    // 4. Factory Routes (Protected, role = factory)
+    // 3. Factory Routes (Protected, role = factory)
     if (currentPath.startsWith('/factory/')) {
       return (
         <ProtectedRoute allowedRole="factory" currentPath={currentPath}>
@@ -158,8 +128,6 @@ const Router: React.FC = () => {
                 return <FactoryProcurement />;
               case '/factory/scheduling':
                 return <FactoryScheduling />;
-              case '/factory/transport':
-                return <FactoryTransport />;
               case '/factory/quality':
                 return <FactoryQuality />;
               case '/factory/billing':

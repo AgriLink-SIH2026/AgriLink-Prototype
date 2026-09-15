@@ -12,9 +12,9 @@ export const FactoryCrops: React.FC = () => {
   // Set of crops already in procurement
   const existingProcurementCropIds = new Set(procurements.map((p) => p.cropRegistrationId));
 
-  const verifiedCrops = crops.filter((c) => c.status === 'Verified');
+  const registeredCrops = crops.filter((c) => c.status === 'Registered');
 
-  const filtered = verifiedCrops.filter((crop) => {
+  const filtered = registeredCrops.filter((crop) => {
     const matchesSearch =
       crop.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       crop.farmerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -30,13 +30,13 @@ export const FactoryCrops: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold mb-2">
             <Sprout className="w-3.5 h-3.5 text-amber-700" />
-            <span>Section 18 • Verified Crop Intake Pool</span>
+            <span>Section 18 • Registered Crop Intake Pool</span>
           </div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Verified Catchment Crops
+            Registered Processing Crops
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Crops inspected and approved by Field Officers, eligible to enter your factory procurement schedule.
+            Processing crops submitted directly by farmers and ready for factory intake scheduling.
           </p>
         </div>
 
@@ -55,7 +55,7 @@ export const FactoryCrops: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search verified crop ID, farmer, or village..."
+            placeholder="Search crop ID, farmer, or village..."
             className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
         </div>
@@ -116,11 +116,6 @@ export const FactoryCrops: React.FC = () => {
                   <p>
                     <strong>Harvest Window:</strong> {crop.expectedHarvestDate}
                   </p>
-                  {crop.officerRemarks && (
-                    <p className="text-[11px] text-slate-500 italic pt-1">
-                      &ldquo;{crop.officerRemarks}&rdquo;
-                    </p>
-                  )}
                 </div>
               </div>
 

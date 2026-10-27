@@ -11,6 +11,10 @@ import {
   QualityRecord,
   WeighmentRecord,
   TransportRecord,
+  Slot,
+  Booking,
+  DigitalSlip,
+  FactoryPriceComparison,
 } from '../types';
 import {
   initializeStorage,
@@ -22,10 +26,22 @@ import {
   saveInspection,
   getStoredNotifications,
   getStoredFactories,
+  getStoredSlots,
+  saveStoredSlots,
+  saveSlot,
+  getStoredBookings,
+  saveStoredBookings,
+  saveBooking,
+  getStoredDigitalSlips,
+  saveStoredDigitalSlips,
+  saveDigitalSlip,
+  getStoredPriceComparisons,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   resetStorageToDefaults,
 } from '../services/storage';
+import { SlotService } from '../services/slotService';
+import { generateDigitalSlip, updateSlipVehicle } from '../services/digitalSlipService';
 import { dispatchNotification } from '../services/notificationService';
 import { useAuth } from './AuthContext';
 
@@ -40,9 +56,9 @@ interface RegisterCropInput {
   district: string;
   state: string;
   notes?: string;
-  imageUrl: string;
-  latitude: number;
-  longitude: number;
+  imageUrl?: string;
+  latitude?: number;
+  longitude?: number;
   locationAccuracy?: number;
 }
 
@@ -52,6 +68,10 @@ interface AppDataContextType {
   inspections: InspectionReport[];
   notifications: Notification[];
   factories: FactoryInfo[];
+  slots: Slot[];
+  bookings: Booking[];
+  digitalSlips: DigitalSlip[];
+  priceComparisons: FactoryPriceComparison[];
   registerCrop: (data: RegisterCropInput) => Promise<CropRegistration>;
   verifyCrop: (
     cropId: string,
@@ -59,6 +79,17 @@ interface AppDataContextType {
     remarks: string,
     inspectionData?: Partial<InspectionReport>
   ) => Promise<void>;
+  bookSlot: (data: {
+    slotId: string;
+    cropRegistrationId?: string;
+    cropType: CropType;
+    quantityTons: number;
+    harvestDate: string;
+    vehicleNumber?: string | null;
+  }) => Promise<Booking>;
+  releaseSlot: (bookingId: string) => Promise<void>;
+  updateBookingVehicle: (bookingId: string, vehicleNumber: string) => Promise<void>;
+  getDigitalSlipForBooking: (bookingId: string) => DigitalSlip | undefined;
   scheduleProcurement: (data: {
     cropRegistrationId: string;
     factoryId: string;
@@ -116,6 +147,22 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     initializeStorage();
     return getStoredFactories();
   });
+  const [slots, setSlots] = useState<Slot[]>(() => {
+    initializeStorage();
+    return getStoredSlots();
+  });
+  const [bookings, setBookings] = useState<Booking[]>(() => {
+    initializeStorage();
+    return getStoredBookings();
+  });
+  const [digitalSlips, setDigitalSlips] = useState<DigitalSlip[]>(() => {
+    initializeStorage();
+    return getStoredDigitalSlips();
+  });
+  const [priceComparisons, setPriceComparisons] = useState<FactoryPriceComparison[]>(() => {
+    initializeStorage();
+    return getStoredPriceComparisons();
+  });
 
   const loadData = () => {
     setCrops(getStoredCrops());
@@ -123,6 +170,10 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     setInspections(getStoredInspections());
     setNotifications(getStoredNotifications());
     setFactories(getStoredFactories());
+    setSlots(getStoredSlots());
+    setBookings(getStoredBookings());
+    setDigitalSlips(getStoredDigitalSlips());
+    setPriceComparisons(getStoredPriceComparisons());
   };
 
   useEffect(() => {
@@ -151,9 +202,9 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       district: data.district,
       state: data.state,
       notes: data.notes,
-      status: 'Pending Verification',
+      status: 'Registered',
       registrationDate: new Date().toISOString(),
-      imageUrl: data.imageUrl,
+      imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1594488518001-3e479a8e97f0?w=800&auto=format&fit=crop&q=80',
       latitude: data.latitude,
       longitude: data.longitude,
       locationAccuracy: data.locationAccuracy,
@@ -162,16 +213,6 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     saveCrop(newCrop);
 
-    // Notify Field Officers
-    dispatchNotification({
-      recipientUserId: 'officer-1',
-      recipientRole: 'officer',
-      title: 'New Crop Awaiting Verification',
-      message: `${newCrop.farmerName} registered ${newCrop.cropType} (${newCrop.id}) in ${newCrop.village}, ${newCrop.district}.`,
-      category: 'crop',
-      linkUrl: '/officer/verification',
-    });
-
     // Notify Farmer confirmation (In-app + SMS)
     dispatchNotification({
       recipientUserId: newCrop.farmerId,
@@ -179,12 +220,158 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       recipientPhone: newCrop.farmerPhone,
       sendSms: true,
       title: 'Crop Registered Successfully ✓',
-      message: `Your ${newCrop.cropType} (${newCrop.id}) was submitted with geotagged proof. Pending field officer inspection.`,
+      message: `Your ${newCrop.cropType} (${newCrop.id}) was recorded. It is immediately eligible for 24-hour factory slot booking.`,
       category: 'crop',
       linkUrl: '/farmer/crops',
     });
 
     return newCrop;
+  };
+
+  const bookSlot = async (data: {
+    slotId: string;
+    cropRegistrationId?: string;
+    cropType: CropType;
+    quantityTons: number;
+    harvestDate: string;
+    vehicleNumber?: string | null;
+  }): Promise<Booking> => {
+    const targetSlot = slots.find((s) => s.id === data.slotId);
+    if (!targetSlot) throw new Error('Selected slot does not exist');
+
+    // 1. Advance Window Lock: validate farmer can only book 1 week (7 days) prior to harvest_date
+    const lockValidation = SlotService.validateAdvanceWindowLock(data.harvestDate);
+    if (!lockValidation.allowed) {
+      throw new Error(lockValidation.reason || 'Advance Window Locked: Bookings open strictly 1 week prior to harvest.');
+    }
+
+    if (targetSlot.availableCapacityTons < data.quantityTons) {
+      throw new Error(`Insufficient slot capacity. Requested: ${data.quantityTons}T, Available: ${targetSlot.availableCapacityTons}T`);
+    }
+
+    // 2. Deduct slot capacity
+    const updatedCapacity = Number((targetSlot.availableCapacityTons - data.quantityTons).toFixed(2));
+    const updatedSlot: Slot = {
+      ...targetSlot,
+      availableCapacityTons: updatedCapacity,
+      status: updatedCapacity <= 0 ? 'FULL' : 'AVAILABLE',
+    };
+    saveSlot(updatedSlot);
+    setSlots((prev) => prev.map((s) => (s.id === updatedSlot.id ? updatedSlot : s)));
+
+    // 3. Create Booking
+    const newBookingId = `book-2026-${Date.now().toString().slice(-4)}`;
+    const newBooking: Booking = {
+      id: newBookingId,
+      slotId: targetSlot.id,
+      farmerId: currentUser?.id || 'farmer-1',
+      farmerName: currentUser?.name || 'Ramesh Patel',
+      farmerPhone: currentUser?.phone || '+91 98220 14589',
+      cropRegistrationId: data.cropRegistrationId,
+      cropType: data.cropType,
+      quantityTons: data.quantityTons,
+      bookingTime: new Date().toISOString(),
+      harvestDate: data.harvestDate,
+      slotStart: targetSlot.slotStart,
+      slotEnd: targetSlot.slotEnd,
+      slotStatus: 'BOOKED',
+      vehicleNumber: data.vehicleNumber ? data.vehicleNumber.trim().toUpperCase() : null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 4. Auto-generate Digital Gate Pass / Slip
+    const newDigitalSlip = generateDigitalSlip(newBooking, targetSlot.factoryName);
+    newBooking.digitalSlipId = newDigitalSlip.slipId;
+
+    saveBooking(newBooking);
+    saveDigitalSlip(newDigitalSlip);
+
+    setBookings((prev) => [newBooking, ...prev]);
+    setDigitalSlips((prev) => [newDigitalSlip, ...prev]);
+
+    // Dispatch confirmation notification
+    dispatchNotification({
+      recipientUserId: newBooking.farmerId,
+      recipientRole: 'farmer',
+      recipientPhone: newBooking.farmerPhone,
+      sendSms: true,
+      title: 'Intake Slot Confirmed ✓',
+      message: `24h Slot booked at ${targetSlot.factoryName} for ${data.cropType}. Gate Pass #${newDigitalSlip.slipId} issued.`,
+      category: 'slot',
+      linkUrl: '/farmer/procurement',
+    });
+
+    return newBooking;
+  };
+
+  const releaseSlot = async (bookingId: string) => {
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) throw new Error('Booking not found');
+
+    const targetSlot = slots.find((s) => s.id === booking.slotId);
+    if (!targetSlot) throw new Error('Associated slot not found');
+
+    // Dynamic slot release: Atomic release & capacity restoration
+    const { updatedBooking, updatedSlot } = SlotService.releaseSlot(booking, targetSlot);
+
+    saveBooking(updatedBooking);
+    saveSlot(updatedSlot);
+
+    setBookings((prev) => prev.map((b) => (b.id === bookingId ? updatedBooking : b)));
+    setSlots((prev) => prev.map((s) => (s.id === updatedSlot.id ? updatedSlot : s)));
+
+    dispatchNotification({
+      recipientUserId: booking.farmerId,
+      recipientRole: 'farmer',
+      recipientPhone: booking.farmerPhone,
+      sendSms: true,
+      title: 'Slot Released ✓',
+      message: `Your slot (${booking.cropType} - ${booking.quantityTons}T) was released. 24h intake window is now available for queuing farmers.`,
+      category: 'slot',
+      linkUrl: '/farmer/procurement',
+    });
+  };
+
+  const updateBookingVehicle = async (bookingId: string, vehicleNumber: string) => {
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) throw new Error('Booking not found');
+
+    const canUpdate = SlotService.canUpdateVehicle(booking.slotStart);
+    if (!canUpdate.allowed) {
+      throw new Error(canUpdate.reason || 'Vehicle updates are locked at least 6 hours prior to slot start.');
+    }
+
+    const cleanVehicle = vehicleNumber.trim().toUpperCase();
+    const updatedBooking: Booking = {
+      ...booking,
+      vehicleNumber: cleanVehicle,
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveBooking(updatedBooking);
+    setBookings((prev) => prev.map((b) => (b.id === bookingId ? updatedBooking : b)));
+
+    // Update matching digital slip
+    const matchingSlip = digitalSlips.find((s) => s.bookingId === bookingId || s.slipId === booking.digitalSlipId);
+    if (matchingSlip) {
+      const updatedSlip = updateSlipVehicle(matchingSlip, cleanVehicle);
+      saveDigitalSlip(updatedSlip);
+      setDigitalSlips((prev) => prev.map((s) => (s.id === updatedSlip.id ? updatedSlip : s)));
+    }
+
+    dispatchNotification({
+      recipientUserId: booking.farmerId,
+      recipientRole: 'farmer',
+      title: 'Vehicle Registration Updated ✓',
+      message: `Vehicle ${cleanVehicle} linked to Gate Pass #${booking.digitalSlipId || booking.id}. Verified for factory entry.`,
+      category: 'slot',
+      linkUrl: '/farmer/procurement',
+    });
+  };
+
+  const getDigitalSlipForBooking = (bookingId: string): DigitalSlip | undefined => {
+    return digitalSlips.find((s) => s.bookingId === bookingId || s.id === `slip-${bookingId}`);
   };
 
   const verifyCrop = async (
@@ -641,8 +828,16 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         inspections,
         notifications,
         factories,
+        slots,
+        bookings,
+        digitalSlips,
+        priceComparisons,
         registerCrop,
         verifyCrop,
+        bookSlot,
+        releaseSlot,
+        updateBookingVehicle,
+        getDigitalSlipForBooking,
         scheduleProcurement,
         assignTransport,
         updateTransportStatus,

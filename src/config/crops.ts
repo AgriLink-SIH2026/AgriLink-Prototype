@@ -2,7 +2,7 @@ import { CropType } from '../types';
 
 export interface CropMetadata {
   type: CropType;
-  industry: 'Sugar' | 'Textile' | 'Oilseed' | 'Tea & Coffee';
+  industry: 'Sugar' | 'Textile' | 'Oilseed' | 'Tea & Coffee' | 'Grain Processing';
   description: string;
   varieties: string[];
   growingSeasonMonths: number;
@@ -13,6 +13,7 @@ export interface CropMetadata {
 }
 
 export const SUPPORTED_CROPS: Record<CropType, CropMetadata> = {
+  // Cash Crops
   Sugarcane: {
     type: 'Sugarcane',
     industry: 'Sugar',
@@ -27,7 +28,7 @@ export const SUPPORTED_CROPS: Record<CropType, CropMetadata> = {
   Cotton: {
     type: 'Cotton',
     industry: 'Textile',
-    description: 'Medium and long staple fiber crop for ginning and spinning mills.',
+    description: 'Medium and long staple fiber cash crop for ginning and spinning mills.',
     varieties: ['Bt Cotton RCH-2', 'Bollgard II', 'MCU-5', 'Suraj', 'DCH-32'],
     growingSeasonMonths: 6,
     expectedYieldPerAcreKg: 1200,
@@ -35,6 +36,54 @@ export const SUPPORTED_CROPS: Record<CropType, CropMetadata> = {
     color: 'sky',
     iconName: 'Shirt',
   },
+  Soybean: {
+    type: 'Soybean',
+    industry: 'Oilseed',
+    description: 'High-protein, 18-20% oil content Kharif cash crop for solvent extraction mills.',
+    varieties: ['JS 335', 'JS 95-60', 'NRC 37', 'MACS 1407', 'RVS 2001-4'],
+    growingSeasonMonths: 3.5,
+    expectedYieldPerAcreKg: 1100,
+    benchmarkPricePerKg: 48.92, // ₹4,892 / Quintal MSP
+    color: 'yellow',
+    iconName: 'Package',
+  },
+
+  // Standard Grains
+  Wheat: {
+    type: 'Wheat',
+    industry: 'Grain Processing',
+    description: 'Staple Rabi cereal grain for industrial flour mills, bakeries, and state food corporations.',
+    varieties: ['Sharbati', 'HD 2967', 'PBW 343', 'Lokwan', 'WH 147'],
+    growingSeasonMonths: 4.5,
+    expectedYieldPerAcreKg: 1800,
+    benchmarkPricePerKg: 22.75, // ₹2,275 / Quintal MSP
+    color: 'amber',
+    iconName: 'Wheat',
+  },
+  Rice: {
+    type: 'Rice',
+    industry: 'Grain Processing',
+    description: 'Paddy grain for modern automated parboiled and raw rice milling plants.',
+    varieties: ['Basmati 1121', 'Sona Masoori', 'IR 64', 'Pusa Basmati 1509', 'Swarna'],
+    growingSeasonMonths: 4,
+    expectedYieldPerAcreKg: 2200,
+    benchmarkPricePerKg: 23.00, // ₹2,300 / Quintal MSP
+    color: 'emerald',
+    iconName: 'Wheat',
+  },
+  Maize: {
+    type: 'Maize',
+    industry: 'Grain Processing',
+    description: 'Industrial corn for starch manufacturing, poultry feed, and ethanol extraction units.',
+    varieties: ['HQPM 1', 'Pioneer 30V92', 'DHM 117', 'Ganga 11', 'Bio 9681'],
+    growingSeasonMonths: 3.5,
+    expectedYieldPerAcreKg: 2500,
+    benchmarkPricePerKg: 22.25, // ₹2,225 / Quintal MSP
+    color: 'yellow',
+    iconName: 'Wheat',
+  },
+
+  // Other Oilseeds & Plantations
   Mustard: {
     type: 'Mustard',
     industry: 'Oilseed',
@@ -45,17 +94,6 @@ export const SUPPORTED_CROPS: Record<CropType, CropMetadata> = {
     benchmarkPricePerKg: 56.50, // ₹5,650 / Quintal MSP
     color: 'amber',
     iconName: 'Droplet',
-  },
-  Soybean: {
-    type: 'Soybean',
-    industry: 'Oilseed',
-    description: 'High-protein, 18-20% oil content Kharif oilseed for solvent extraction.',
-    varieties: ['JS 335', 'JS 95-60', 'NRC 37', 'MACS 1407', 'RVS 2001-4'],
-    growingSeasonMonths: 3.5,
-    expectedYieldPerAcreKg: 1100,
-    benchmarkPricePerKg: 46.00, // ₹4,600 / Quintal MSP
-    color: 'yellow',
-    iconName: 'Package',
   },
   Sunflower: {
     type: 'Sunflower',
@@ -84,7 +122,7 @@ export const SUPPORTED_CROPS: Record<CropType, CropMetadata> = {
     industry: 'Tea & Coffee',
     description: 'Perennial plantation crop for CTC and orthodox leaf processing.',
     varieties: ['TV 1', 'TV 9', 'UPASI 9', 'AV 2', 'B/5/63'],
-    growingSeasonMonths: 9, // Perennial flush cycles
+    growingSeasonMonths: 9,
     expectedYieldPerAcreKg: 2200,
     benchmarkPricePerKg: 28.50,
     color: 'teal',
@@ -106,8 +144,11 @@ export const SUPPORTED_CROPS: Record<CropType, CropMetadata> = {
 export const CROP_LIST: CropType[] = [
   'Sugarcane',
   'Cotton',
-  'Mustard',
   'Soybean',
+  'Wheat',
+  'Rice',
+  'Maize',
+  'Mustard',
   'Sunflower',
   'Groundnut',
   'Tea',

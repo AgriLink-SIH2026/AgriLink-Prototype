@@ -1,7 +1,8 @@
 -- ==============================================================================
 -- AgriLink Unified Agricultural Procurement Platform
 -- Problem Statement ID: SIH26032 (Smart India Hackathon 2026)
--- Complete PostgreSQL Schema with Foreign Keys, Constraints, and RLS Policies
+-- Complete PostgreSQL Schema with 24-Hour Slots, Flexible Vehicle Registration,
+-- and Digital Slips. Field Officer and Inspection entities dropped.
 -- ==============================================================================
 
 -- Enable UUID extension
@@ -12,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
-    role VARCHAR(32) NOT NULL CHECK (role IN ('farmer', 'officer', 'factory')),
+    role VARCHAR(32) NOT NULL CHECK (role IN ('farmer', 'factory')),
     phone VARCHAR(32) NOT NULL,
     avatar_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -41,7 +42,7 @@ CREATE TABLE IF NOT EXISTS public.farmer_profiles (
 CREATE TABLE IF NOT EXISTS public.factories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
-    industry_type VARCHAR(64) NOT NULL CHECK (industry_type IN ('Sugar', 'Textile', 'Oilseed', 'Tea & Coffee')),
+    industry_type VARCHAR(64) NOT NULL CHECK (industry_type IN ('Sugar', 'Textile', 'Oilseed', 'Tea & Coffee', 'Grain Processing')),
     supported_crops TEXT[] NOT NULL,
     district VARCHAR(128) NOT NULL,
     state VARCHAR(128) NOT NULL,
@@ -54,11 +55,11 @@ CREATE TABLE IF NOT EXISTS public.factories (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Crop Registrations Table
+-- 4. Crop Registrations Table (Direct Farmer Submission)
 CREATE TABLE IF NOT EXISTS public.crop_registrations (
     id VARCHAR(64) PRIMARY KEY, -- e.g. AGRI-CROP-2026-0001
     farmer_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    crop_type VARCHAR(64) NOT NULL CHECK (crop_type IN ('Sugarcane', 'Cotton', 'Mustard', 'Soybean', 'Sunflower', 'Groundnut', 'Tea', 'Coffee')),
+    crop_type VARCHAR(64) NOT NULL CHECK (crop_type IN ('Sugarcane', 'Cotton', 'Soybean', 'Wheat', 'Rice', 'Maize', 'Mustard', 'Sunflower', 'Groundnut', 'Tea', 'Coffee')),
     variety VARCHAR(128) NOT NULL,
     land_area NUMERIC(10, 2) NOT NULL,
     land_unit VARCHAR(32) NOT NULL,
@@ -68,39 +69,60 @@ CREATE TABLE IF NOT EXISTS public.crop_registrations (
     district VARCHAR(128) NOT NULL,
     state VARCHAR(128) NOT NULL,
     notes TEXT,
-    status VARCHAR(64) NOT NULL DEFAULT 'Pending Verification' CHECK (status IN ('Pending Verification', 'Verified', 'Rejected', 'Re-verification Required')),
+    status VARCHAR(64) NOT NULL DEFAULT 'Registered' CHECK (status IN ('Registered', 'In Procurement', 'Completed', 'Cancelled')),
     registration_date TIMESTAMPTZ DEFAULT NOW(),
-    image_url TEXT NOT NULL,
-    latitude NUMERIC(10, 6) NOT NULL,
-    longitude NUMERIC(10, 6) NOT NULL,
-    location_accuracy NUMERIC(8, 2),
-    captured_at TIMESTAMPTZ NOT NULL,
-    verification_date TIMESTAMPTZ,
-    verified_by_officer_id UUID REFERENCES public.users(id),
-    officer_remarks TEXT,
-    rejection_reason TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Field Inspection Reports
-CREATE TABLE IF NOT EXISTS public.inspection_reports (
-    id VARCHAR(64) PRIMARY KEY, -- e.g. REP-2026-0001
-    crop_registration_id VARCHAR(64) NOT NULL REFERENCES public.crop_registrations(id) ON DELETE CASCADE,
-    officer_id UUID NOT NULL REFERENCES public.users(id),
-    crop_condition VARCHAR(32) NOT NULL CHECK (crop_condition IN ('Excellent', 'Good', 'Average', 'Poor')),
-    field_condition TEXT NOT NULL,
-    pest_infestation_risk VARCHAR(32) NOT NULL CHECK (pest_infestation_risk IN ('Low', 'Moderate', 'High')),
-    soil_moisture_condition VARCHAR(32) NOT NULL CHECK (soil_moisture_condition IN ('Adequate', 'Deficit', 'Excess')),
-    estimated_yield_per_acre_kg NUMERIC(12, 2) NOT NULL,
-    verification_remarks TEXT NOT NULL,
-    inspection_date TIMESTAMPTZ DEFAULT NOW()
+-- 5. Intake Slots Table (24-Hour Windows with Capacity Balancer)
+CREATE TABLE IF NOT EXISTS public.slots (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    factory_id UUID NOT NULL REFERENCES public.factories(id) ON DELETE CASCADE,
+    crop_type VARCHAR(64) NOT NULL,
+    slot_start TIMESTAMPTZ NOT NULL,
+    slot_end TIMESTAMPTZ NOT NULL, -- 24-hour window duration
+    total_capacity_tons NUMERIC(10, 2) NOT NULL DEFAULT 50.00,
+    available_capacity_tons NUMERIC(10, 2) NOT NULL DEFAULT 50.00,
+    status VARCHAR(32) NOT NULL DEFAULT 'AVAILABLE' CHECK (status IN ('AVAILABLE', 'FULL', 'CLOSED')),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT slot_24h_window_check CHECK (slot_end = slot_start + INTERVAL '24 hours')
 );
 
--- 6. Procurements Table (Central Lifecycle Engine)
+-- 6. Bookings Table (1-Week Advance Lock & Flexible Vehicle Number)
+CREATE TYPE slot_status_enum AS ENUM ('BOOKED', 'RELEASED', 'COMPLETED', 'CANCELLED');
+
+CREATE TABLE IF NOT EXISTS public.bookings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    slot_id UUID NOT NULL REFERENCES public.slots(id) ON DELETE RESTRICT,
+    farmer_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    crop_registration_id VARCHAR(64) REFERENCES public.crop_registrations(id) ON DELETE SET NULL,
+    crop_type VARCHAR(64) NOT NULL,
+    quantity_tons NUMERIC(10, 2) NOT NULL,
+    booking_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    harvest_date DATE NOT NULL,
+    slot_start TIMESTAMPTZ NOT NULL,
+    slot_end TIMESTAMPTZ NOT NULL, -- 24-hour duration
+    slot_status slot_status_enum NOT NULL DEFAULT 'BOOKED',
+    vehicle_number VARCHAR(32), -- NULLABLE on initial booking creation, must be filled >= 6h prior to slot_start
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. Digital Gate Slips Table (1:1 with Booking)
+CREATE TABLE IF NOT EXISTS public.digital_slips (
+    slip_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    booking_id UUID NOT NULL UNIQUE REFERENCES public.bookings(id) ON DELETE CASCADE,
+    farmer_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    qr_code_payload JSONB NOT NULL, -- JSON containing slip_id, farmer_id, slot_time, crop_type, vehicle_number
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8. Procurements Table (Central Lifecycle Engine)
 CREATE TABLE IF NOT EXISTS public.procurements (
     id VARCHAR(64) PRIMARY KEY, -- e.g. PROC-2026-1001
     crop_registration_id VARCHAR(64) NOT NULL REFERENCES public.crop_registrations(id) ON DELETE RESTRICT,
+    booking_id UUID REFERENCES public.bookings(id) ON DELETE SET NULL,
     farmer_id UUID NOT NULL REFERENCES public.users(id),
     factory_id UUID NOT NULL REFERENCES public.factories(id),
     crop_type VARCHAR(64) NOT NULL,
@@ -117,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.procurements (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. Transport Records Table
+-- 9. Transport Records Table
 CREATE TABLE IF NOT EXISTS public.transport_records (
     id VARCHAR(64) PRIMARY KEY, -- e.g. TR-1001
     procurement_id VARCHAR(64) NOT NULL UNIQUE REFERENCES public.procurements(id) ON DELETE CASCADE,
@@ -131,7 +153,7 @@ CREATE TABLE IF NOT EXISTS public.transport_records (
     assigned_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 8. Quality Records Table
+-- 10. Quality Records Table
 CREATE TABLE IF NOT EXISTS public.quality_records (
     id VARCHAR(64) PRIMARY KEY, -- e.g. QUAL-1001
     procurement_id VARCHAR(64) NOT NULL UNIQUE REFERENCES public.procurements(id) ON DELETE CASCADE,
@@ -146,7 +168,7 @@ CREATE TABLE IF NOT EXISTS public.quality_records (
     checked_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. Electronic Weighment Records Table (Certified Gross - Tare = Net)
+-- 11. Electronic Weighment Records Table (Certified Gross - Tare = Net)
 CREATE TABLE IF NOT EXISTS public.weighment_records (
     id VARCHAR(64) PRIMARY KEY, -- e.g. WEIGH-1001
     procurement_id VARCHAR(64) NOT NULL UNIQUE REFERENCES public.procurements(id) ON DELETE CASCADE,
@@ -159,7 +181,7 @@ CREATE TABLE IF NOT EXISTS public.weighment_records (
     remarks TEXT
 );
 
--- 10. Digital Bills & Payment Ledger
+-- 12. Digital Bills & Payment Ledger
 CREATE TABLE IF NOT EXISTS public.bills (
     id VARCHAR(64) PRIMARY KEY, -- e.g. BILL-1001
     procurement_id VARCHAR(64) NOT NULL UNIQUE REFERENCES public.procurements(id) ON DELETE CASCADE,
@@ -174,7 +196,7 @@ CREATE TABLE IF NOT EXISTS public.bills (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 11. Multi-Channel Notifications Table (SMS / IVR Ready)
+-- 13. Multi-Channel Notifications Table (SMS / IVR Ready)
 CREATE TABLE IF NOT EXISTS public.notifications (
     id VARCHAR(64) PRIMARY KEY,
     recipient_user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -193,22 +215,36 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 -- Indexes for Fast Querying
 CREATE INDEX IF NOT EXISTS idx_crops_farmer_id ON public.crop_registrations(farmer_id);
 CREATE INDEX IF NOT EXISTS idx_crops_status ON public.crop_registrations(status);
+CREATE INDEX IF NOT EXISTS idx_slots_factory ON public.slots(factory_id);
+CREATE INDEX IF NOT EXISTS idx_slots_start ON public.slots(slot_start);
+CREATE INDEX IF NOT EXISTS idx_bookings_farmer ON public.bookings(farmer_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_slot ON public.bookings(slot_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON public.bookings(slot_status);
+CREATE INDEX IF NOT EXISTS idx_slips_booking ON public.digital_slips(booking_id);
 CREATE INDEX IF NOT EXISTS idx_proc_status ON public.procurements(current_status);
 CREATE INDEX IF NOT EXISTS idx_proc_factory ON public.procurements(factory_id);
 CREATE INDEX IF NOT EXISTS idx_notif_recipient ON public.notifications(recipient_user_id);
 
 -- Row Level Security (RLS) Policies
 ALTER TABLE public.crop_registrations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.slots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.digital_slips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.procurements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bills ENABLE ROW LEVEL SECURITY;
 
--- Farmer can view and insert their own crop registrations
 CREATE POLICY farmer_crop_access ON public.crop_registrations
     FOR ALL
-    USING (auth.uid() = farmer_id OR auth.jwt()->>'role' IN ('officer', 'factory'));
+    USING (auth.uid() = farmer_id OR auth.jwt()->>'role' = 'factory');
 
--- Completed Schema
-COMMENT ON TABLE public.crop_registrations IS 'Geotagged crop plot submissions with GPS evidence';
-COMMENT ON TABLE public.procurements IS '14-stage industrial procurement lifecycle manager';
+CREATE POLICY slots_view_all ON public.slots FOR SELECT USING (true);
+CREATE POLICY bookings_farmer_access ON public.bookings FOR ALL USING (auth.uid() = farmer_id OR auth.jwt()->>'role' = 'factory');
+CREATE POLICY slips_view ON public.digital_slips FOR SELECT USING (auth.uid() = farmer_id OR auth.jwt()->>'role' = 'factory');
+
+COMMENT ON TABLE public.crop_registrations IS 'Farmer crop registrations eligible for intake booking';
+COMMENT ON TABLE public.slots IS '24-hour factory intake windows with dynamic capacity balancer';
+COMMENT ON TABLE public.bookings IS 'Farmer slot reservations with 1-week lock and flexible vehicle registration';
+COMMENT ON TABLE public.digital_slips IS 'Online Digital Gate Pass with QR payload for factory entry';
+COMMENT ON TABLE public.procurements IS 'Procurement lifecycle manager';
 COMMENT ON TABLE public.weighment_records IS 'Certified electronic weighbridge slips with auto-computed Net Weight';
 COMMENT ON TABLE public.bills IS 'Digital invoice ledgers and direct bank settlement statuses';

@@ -62,10 +62,9 @@ export const SignupPage: React.FC = () => {
             <label className="text-xs font-bold text-slate-700 block mb-2">
               Select Your Role (Persisted in Database)
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {[
                 { id: 'farmer', label: 'Farmer', icon: User },
-                { id: 'officer', label: 'Officer', icon: ShieldCheck },
                 { id: 'factory', label: 'Factory', icon: Factory },
               ].map((r) => {
                 const Icon = r.icon;

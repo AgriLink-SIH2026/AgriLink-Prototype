@@ -110,7 +110,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const roleDemoIds: Record<UserRole, string> = {
       farmer: 'farmer-1',
-      officer: 'officer-1',
       factory: 'factory-1',
     };
 

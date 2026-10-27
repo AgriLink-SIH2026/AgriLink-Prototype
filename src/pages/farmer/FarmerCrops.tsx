@@ -196,23 +196,33 @@ export const FarmerCrops: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <MapView
-                    center={[selectedCrop.latitude, selectedCrop.longitude]}
-                    zoom={14}
-                    height="160px"
-                    markers={[
-                      {
-                        lat: selectedCrop.latitude,
-                        lng: selectedCrop.longitude,
-                        title: selectedCrop.cropType,
-                        subtitle: selectedCrop.id,
-                        type: 'crop',
-                      },
-                    ]}
-                  />
-                  <p className="text-[11px] font-mono text-[#777268] mt-1">
-                    GPS: {selectedCrop.latitude.toFixed(5)}°N, {selectedCrop.longitude.toFixed(5)}°E
-                  </p>
+                  {selectedCrop.latitude != null && selectedCrop.longitude != null ? (
+                    <>
+                      <MapView
+                        center={[selectedCrop.latitude, selectedCrop.longitude]}
+                        zoom={14}
+                        height="160px"
+                        markers={[
+                          {
+                            lat: selectedCrop.latitude,
+                            lng: selectedCrop.longitude,
+                            title: selectedCrop.cropType,
+                            subtitle: selectedCrop.id,
+                            type: 'crop',
+                          },
+                        ]}
+                      />
+                      <p className="text-[11px] font-mono text-[#777268] mt-1">
+                        GPS: {selectedCrop.latitude.toFixed(5)}°N, {selectedCrop.longitude.toFixed(5)}°E
+                      </p>
+                    </>
+                  ) : (
+                    <div className="h-40 rounded-2xl border border-[#DFD7C4] bg-[#F3EFE4] flex items-center justify-center p-4 text-center">
+                      <p className="text-xs text-[#777268]">
+                        Location: {selectedCrop.village}, {selectedCrop.district}, {selectedCrop.state}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

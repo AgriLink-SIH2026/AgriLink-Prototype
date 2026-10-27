@@ -37,9 +37,11 @@ export const CropCard: React.FC<CropCardProps> = ({
               <MapPin className="w-3 h-3 text-[#D97824]" />
               <span className="font-sans">{crop.village}, {crop.district}</span>
             </span>
-            <span className="font-mono text-[#D97824] text-[10px]">
-              {crop.latitude.toFixed(3)}°N, {crop.longitude.toFixed(3)}°E
-            </span>
+            {crop.latitude != null && crop.longitude != null && (
+              <span className="font-mono text-[#D97824] text-[10px]">
+                {crop.latitude.toFixed(3)}°N, {crop.longitude.toFixed(3)}°E
+              </span>
+            )}
           </div>
         </div>
 

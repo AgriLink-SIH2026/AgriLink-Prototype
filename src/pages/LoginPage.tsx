@@ -26,17 +26,12 @@ export const LoginPage: React.FC = () => {
   const initialRole = (urlParams.get('role') as UserRole) || 'farmer';
   const redirectTarget = urlParams.get('redirect');
 
-  // Quick fill accounts per role
-  const demoAccounts = {
+  // Quick fill accounts per role (Officer dropped)
+  const demoAccounts: Record<UserRole, { name: string; subtext: string; email: string }> = {
     farmer: {
       name: 'Ramesh Patel / Rajesh Patil',
       subtext: 'Sugarcane Farmer • Kolhapur',
       email: 'ramesh.patel@agrilink.in',
-    },
-    officer: {
-      name: 'Rajesh Sharma',
-      subtext: 'Agronomist / Field Officer',
-      email: 'rajesh.sharma@agrilink.gov.in',
     },
     factory: {
       name: 'Sahyadri Cooperative Sugar Mill',
@@ -45,8 +40,8 @@ export const LoginPage: React.FC = () => {
     },
   };
 
-  const [selectedRole, setSelectedRole] = useState<UserRole>(initialRole);
-  const [identifier, setIdentifier] = useState(demoAccounts[initialRole]?.email || 'ramesh.patel@agrilink.in');
+  const [selectedRole, setSelectedRole] = useState<UserRole>(initialRole === 'factory' ? 'factory' : 'farmer');
+  const [identifier, setIdentifier] = useState(demoAccounts[selectedRole]?.email || 'ramesh.patel@agrilink.in');
   const [password, setPassword] = useState('demo123');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -183,15 +178,14 @@ export const LoginPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Role Selection Tabs */}
+          {/* Role Selection Tabs (Farmer & Factory) */}
           <div>
             <label className="text-[11px] uppercase font-bold tracking-wider text-[#777268] block mb-2">
               Select Your Role
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {[
                 { id: 'farmer', label: 'Farmer', icon: User },
-                { id: 'officer', label: 'Field Officer', icon: ShieldCheck },
                 { id: 'factory', label: 'Factory', icon: Factory },
               ].map((r) => {
                 const Icon = r.icon;
@@ -201,14 +195,14 @@ export const LoginPage: React.FC = () => {
                     key={r.id}
                     type="button"
                     onClick={() => handleRoleTabChange(r.id as UserRole)}
-                    className={`py-2.5 px-2 rounded-xl text-xs font-bold flex flex-col items-center gap-1 transition-all ${
+                    className={`py-3 px-3 rounded-xl text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
                       isSelected
                         ? 'bg-[#173522] text-[#EBE5D6] shadow-sm'
                         : 'bg-white text-[#777268] border border-[#DFD7C4] hover:bg-[#EBE5D6]'
                     }`}
                   >
                     <Icon
-                      className={`w-4 h-4 ${
+                      className={`w-5 h-5 ${
                         isSelected ? 'text-[#D97824]' : 'text-[#777268]'
                       }`}
                     />

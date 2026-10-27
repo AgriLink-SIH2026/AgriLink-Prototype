@@ -4,8 +4,10 @@ import { useAppData } from '../../context/AppDataContext';
 import { Timeline } from '../../components/common/Timeline';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { BillReceiptModal } from '../../components/farmer/BillReceiptModal';
+import { DigitalSlipModal } from '../../components/farmer/DigitalSlipModal';
+import { VehicleUpdateModal } from '../../components/farmer/VehicleUpdateModal';
 import { WorkflowEngine } from '../../services/workflowEngine';
-import { ProcurementRecord } from '../../types';
+import { ProcurementRecord, Booking, DigitalSlip } from '../../types';
 import { navigate } from '../../utils/navigation';
 import {
   Milestone,
@@ -19,14 +21,25 @@ import {
   Award,
   Archive,
   ArrowUpRight,
+  QrCode,
 } from 'lucide-react';
 
 export const FarmerProcurement: React.FC = () => {
   const { currentUser } = useAuth();
-  const { procurements } = useAppData();
+  const {
+    procurements,
+    bookings,
+    digitalSlips,
+    updateBookingVehicle,
+    getDigitalSlipForBooking,
+  } = useAppData();
 
   const [selectedBillProcurement, setSelectedBillProcurement] =
     useState<ProcurementRecord | null>(null);
+  const [selectedSlip, setSelectedSlip] = useState<DigitalSlip | null>(null);
+  const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
+  const [selectedVehicleBooking, setSelectedVehicleBooking] = useState<Booking | null>(null);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
 
   // Filter procurements belonging to current farmer
   const myProcurements = currentUser
@@ -44,6 +57,14 @@ export const FarmerProcurement: React.FC = () => {
   );
 
   const activeRecord = myProcurements.find((p) => p.id === selectedActiveId);
+
+  // Find matching booking
+  const matchingBooking = bookings.find(
+    (b) =>
+      b.id === activeRecord?.bookingId ||
+      b.cropRegistrationId === activeRecord?.cropRegistrationId ||
+      (b.farmerId === activeRecord?.farmerId && b.cropType === activeRecord?.cropType && b.slotStatus === 'BOOKED')
+  );
 
   return (
     <div className="space-y-6">
@@ -68,14 +89,13 @@ export const FarmerProcurement: React.FC = () => {
           </div>
           <h3 className="text-base font-serif font-bold text-[#173522]">No active procurements yet</h3>
           <p className="text-xs font-sans text-[#777268] mt-1 max-w-md mx-auto">
-            Once a Field Officer marks your crop as "Verified", processing factories can allocate intake
-            slots and dispatch pickup transport.
+            Once you book a 24-hour factory intake slot, your consignment schedule, digital gate pass, and weighment progress will appear here.
           </p>
           <button
-            onClick={() => navigate('/farmer/crops')}
+            onClick={() => navigate('/farmer/dashboard')}
             className="mt-4 inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#173522] text-[#F3EFE4] rounded-xl text-xs font-bold hover:bg-[#244532] transition cursor-pointer"
           >
-            Check Registered Crops
+            Go to Farmer Dashboard
           </button>
         </div>
       ) : (
@@ -136,11 +156,41 @@ export const FarmerProcurement: React.FC = () => {
                   <span className="font-bold text-[#D97824]">Next Action: </span>
                   <span className="text-[#171713]">{WorkflowEngine.getNextStepGuidance(activeRecord.currentStatus)}</span>
                 </div>
-                {activeRecord.scheduledDate && (
-                  <span className="text-[11px] text-[#173522] font-mono shrink-0 bg-white px-2.5 py-1 rounded-lg border border-[#DFD7C4]">
-                    Target Date: {activeRecord.scheduledDate}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {matchingBooking && (
+                    <>
+                      <button
+                        onClick={() => {
+                          const slip = getDigitalSlipForBooking(matchingBooking.id) || digitalSlips.find((s) => s.bookingId === matchingBooking.id);
+                          if (slip) {
+                            setSelectedSlip(slip);
+                            setIsSlipModalOpen(true);
+                          }
+                        }}
+                        className="px-3 py-1 bg-white hover:bg-[#EBE5D6] text-[#173522] border border-[#DFD7C4] rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                      >
+                        <QrCode className="w-3.5 h-3.5 text-[#D97824]" />
+                        <span>Gate Pass</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedVehicleBooking(matchingBooking);
+                          setIsVehicleModalOpen(true);
+                        }}
+                        className="px-3 py-1 bg-white hover:bg-[#EBE5D6] text-[#173522] border border-[#DFD7C4] rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer"
+                      >
+                        <Truck className="w-3.5 h-3.5 text-[#D97824]" />
+                        <span>Update Vehicle</span>
+                      </button>
+                    </>
+                  )}
+                  {activeRecord.scheduledDate && (
+                    <span className="text-[11px] text-[#173522] font-mono shrink-0 bg-white px-2.5 py-1 rounded-lg border border-[#DFD7C4]">
+                      Target Date: {activeRecord.scheduledDate}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -395,6 +445,28 @@ export const FarmerProcurement: React.FC = () => {
           procurement={selectedBillProcurement}
         />
       )}
+
+      {/* Digital Slip Modal */}
+      <DigitalSlipModal
+        slip={selectedSlip}
+        isOpen={isSlipModalOpen}
+        onClose={() => setIsSlipModalOpen(false)}
+        onUpdateVehicleClick={() => {
+          setIsSlipModalOpen(false);
+          if (matchingBooking) {
+            setSelectedVehicleBooking(matchingBooking);
+            setIsVehicleModalOpen(true);
+          }
+        }}
+      />
+
+      {/* Vehicle Update Modal */}
+      <VehicleUpdateModal
+        booking={selectedVehicleBooking}
+        isOpen={isVehicleModalOpen}
+        onClose={() => setIsVehicleModalOpen(false)}
+        onSave={updateBookingVehicle}
+      />
     </div>
   );
 };

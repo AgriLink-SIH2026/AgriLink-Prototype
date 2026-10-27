@@ -1,3 +1,20 @@
+# Environment Variables & Secrets (CRITICAL - Keeps API keys safe)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build and Output Files
+dist/
+dist-ssr/
+build/
+*.local
+
 # Logs
 logs
 *.log
@@ -7,18 +24,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
+# Editor & IDE Directories
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# OS Generated Files
+.DS_Store
+Thumbs.db

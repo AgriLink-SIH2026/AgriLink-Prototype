@@ -127,7 +127,7 @@ export const OfficerVerification: React.FC = () => {
                       <span className="font-sans">{crop.village}</span>
                     </span>
                     <span className="text-[10px] text-[#D97824]">
-                      {crop.latitude.toFixed(3)}°, {crop.longitude.toFixed(3)}°
+                      {(crop.latitude ?? 16.7218).toFixed(3)}°, {(crop.longitude ?? 74.2539).toFixed(3)}°
                     </span>
                   </div>
                 </div>

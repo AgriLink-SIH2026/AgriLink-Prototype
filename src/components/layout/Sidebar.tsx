@@ -39,14 +39,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     { label: 'Notifications', path: '/farmer/notifications', icon: Bell },
   ];
 
-  const officerNav = [
-    { label: 'Dashboard', path: '/officer/dashboard', icon: LayoutDashboard },
-    { label: 'Farmers', path: '/officer/farmers', icon: Users },
-    { label: 'Pending Verification', path: '/officer/verification', icon: CheckSquare, highlight: true },
-    { label: 'Inspection Reports', path: '/officer/inspection-reports', icon: FileText },
-    { label: 'Notifications', path: '/officer/notifications', icon: Bell },
-  ];
-
   const factoryNav = [
     { label: 'Dashboard', path: '/factory/dashboard', icon: LayoutDashboard },
     { label: 'Farmers', path: '/factory/farmers', icon: Users },
@@ -60,19 +52,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, isOpen, onClose }
     { label: 'Notifications', path: '/factory/notifications', icon: Bell },
   ];
 
-  const navItems =
-    currentUser.role === 'farmer'
-      ? farmerNav
-      : currentUser.role === 'officer'
-      ? officerNav
-      : factoryNav;
-
-  const workspaceLabel =
-    currentUser.role === 'farmer'
-      ? 'FARMER WORKSPACE'
-      : currentUser.role === 'officer'
-      ? 'OFFICER WORKSPACE'
-      : 'FACTORY WORKSPACE';
+  const navItems = currentUser.role === 'farmer' ? farmerNav : factoryNav;
+  const workspaceLabel = currentUser.role === 'farmer' ? 'FARMER WORKSPACE' : 'FACTORY WORKSPACE';
 
   return (
     <>

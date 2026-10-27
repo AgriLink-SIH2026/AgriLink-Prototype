@@ -1,4 +1,4 @@
-export type UserRole = 'farmer' | 'officer' | 'factory';
+export type UserRole = 'farmer' | 'factory';
 
 export interface User {
   id: string;
@@ -25,17 +25,23 @@ export interface FarmerProfile {
   completionPercentage: number;
 }
 
+// Explicit support for cash crops (Sugarcane, Cotton, Soybean)
+// alongside standard grains (Wheat, Rice, Maize). NO Spices included.
 export type CropType =
   | 'Sugarcane'
   | 'Cotton'
-  | 'Mustard'
   | 'Soybean'
+  | 'Wheat'
+  | 'Rice'
+  | 'Maize'
+  | 'Mustard'
   | 'Sunflower'
   | 'Groundnut'
   | 'Tea'
   | 'Coffee';
 
 export type CropStatus =
+  | 'Registered'
   | 'Pending Verification'
   | 'Verified'
   | 'Rejected'
@@ -58,17 +64,94 @@ export interface CropRegistration {
   notes?: string;
   status: CropStatus;
   registrationDate: string;
-  imageUrl: string;
-  latitude: number;
-  longitude: number;
+  imageUrl?: string;
+  latitude?: number;
+  longitude?: number;
   locationAccuracy?: number;
-  capturedAt: string;
+  capturedAt?: string;
   verificationDate?: string;
   verifiedByOfficerId?: string;
   verifiedByOfficerName?: string;
   officerRemarks?: string;
   rejectionReason?: string;
   inspectionReportId?: string;
+}
+
+// 24-Hour Slot Management & Booking Types
+export type SlotStatus = 'BOOKED' | 'RELEASED' | 'COMPLETED' | 'CANCELLED';
+
+export interface Slot {
+  id: string;
+  factoryId: string;
+  factoryName: string;
+  cropType: CropType;
+  slotStart: string; // ISO 8601
+  slotEnd: string; // ISO 8601 (Strict 24-hour window)
+  totalCapacityTons: number;
+  availableCapacityTons: number;
+  status: 'AVAILABLE' | 'FULL' | 'CLOSED';
+  createdAt: string;
+}
+
+export interface Booking {
+  id: string;
+  slotId: string;
+  farmerId: string;
+  farmerName: string;
+  farmerPhone: string;
+  cropRegistrationId?: string;
+  cropType: CropType;
+  quantityTons: number;
+  bookingTime: string; // ISO 8601
+  harvestDate: string; // YYYY-MM-DD
+  slotStart: string; // ISO 8601
+  slotEnd: string; // ISO 8601 (Strict 24-hour window)
+  slotStatus: SlotStatus;
+  vehicleNumber: string | null; // Nullable on creation; mandatory >= 6h prior to slotStart
+  digitalSlipId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QRCodePayload {
+  slip_id: string;
+  farmer_id: string;
+  slot_time: string;
+  crop_type: string;
+  vehicle_number: string | null;
+}
+
+export interface DigitalSlip {
+  id: string;
+  slipId: string; // e.g. SLIP-2026-1042
+  bookingId: string;
+  farmerId: string;
+  farmerName: string;
+  farmerPhone: string;
+  cropType: CropType;
+  quantityTons: number;
+  factoryName: string;
+  slotStart: string;
+  slotEnd: string;
+  vehicleNumber: string | null;
+  qrCodePayload: QRCodePayload;
+  createdAt: string;
+}
+
+export interface FactoryPriceComparison {
+  factoryId: string;
+  factoryName: string;
+  district: string;
+  state: string;
+  distanceKm: number;
+  cropType: CropType;
+  buyingRatePerQuintal: number; // In INR
+  buyingRatePerKg: number; // In INR
+  dailyIntakeCapacityTons: number;
+  nextAvailableSlotStart: string;
+  slotId: string;
+  contactPhone: string;
+  lastUpdated: string;
 }
 
 export type ProcurementStatus =
@@ -145,6 +228,7 @@ export interface StatusHistoryItem {
 export interface ProcurementRecord {
   id: string;
   cropRegistrationId: string;
+  bookingId?: string;
   farmerId: string;
   farmerName: string;
   farmerPhone: string;
@@ -169,6 +253,7 @@ export interface ProcurementRecord {
   statusHistory: StatusHistoryItem[];
 }
 
+// Deprecated Field Officer Inspection Report (maintained only for type compatibility)
 export interface InspectionReport {
   id: string;
   cropRegistrationId: string;
@@ -187,10 +272,10 @@ export interface InspectionReport {
 export interface Notification {
   id: string;
   recipientUserId: string;
-  recipientRole: UserRole;
+  recipientRole: UserRole | 'officer';
   title: string;
   message: string;
-  category: 'crop' | 'verification' | 'procurement' | 'transport' | 'quality' | 'payment' | 'system';
+  category: 'crop' | 'verification' | 'procurement' | 'transport' | 'quality' | 'payment' | 'system' | 'slot';
   isRead: boolean;
   createdAt: string;
   channels: {
@@ -204,7 +289,7 @@ export interface Notification {
 export interface FactoryInfo {
   id: string;
   name: string;
-  industryType: 'Sugar' | 'Textile' | 'Oilseed' | 'Tea & Coffee';
+  industryType: 'Sugar' | 'Textile' | 'Oilseed' | 'Tea & Coffee' | 'Grain Processing';
   supportedCrops: CropType[];
   district: string;
   state: string;

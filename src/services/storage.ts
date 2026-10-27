@@ -6,6 +6,10 @@ import {
   InspectionReport,
   Notification,
   FactoryInfo,
+  Slot,
+  Booking,
+  DigitalSlip,
+  FactoryPriceComparison,
 } from '../types';
 import {
   SEED_USERS,
@@ -15,6 +19,10 @@ import {
   SEED_PROCUREMENTS,
   SEED_INSPECTION_REPORTS,
   SEED_NOTIFICATIONS,
+  SEED_SLOTS,
+  SEED_BOOKINGS,
+  SEED_DIGITAL_SLIPS,
+  SEED_PRICE_COMPARISONS,
 } from './seedData';
 
 const STORAGE_KEYS = {
@@ -26,6 +34,10 @@ const STORAGE_KEYS = {
   PROCUREMENTS: 'agrilink_procurements_v1',
   INSPECTIONS: 'agrilink_inspections_v1',
   NOTIFICATIONS: 'agrilink_notifications_v1',
+  SLOTS: 'agrilink_slots_v1',
+  BOOKINGS: 'agrilink_bookings_v1',
+  DIGITAL_SLIPS: 'agrilink_digital_slips_v1',
+  PRICE_COMPARISONS: 'agrilink_price_comparisons_v1',
 };
 
 // Initialize default storage with seed data if empty
@@ -51,6 +63,18 @@ export const initializeStorage = () => {
   if (!localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) {
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(SEED_NOTIFICATIONS));
   }
+  if (!localStorage.getItem(STORAGE_KEYS.SLOTS)) {
+    localStorage.setItem(STORAGE_KEYS.SLOTS, JSON.stringify(SEED_SLOTS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.BOOKINGS)) {
+    localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(SEED_BOOKINGS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.DIGITAL_SLIPS)) {
+    localStorage.setItem(STORAGE_KEYS.DIGITAL_SLIPS, JSON.stringify(SEED_DIGITAL_SLIPS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.PRICE_COMPARISONS)) {
+    localStorage.setItem(STORAGE_KEYS.PRICE_COMPARISONS, JSON.stringify(SEED_PRICE_COMPARISONS));
+  }
 };
 
 export const resetStorageToDefaults = () => {
@@ -62,6 +86,10 @@ export const resetStorageToDefaults = () => {
   localStorage.setItem(STORAGE_KEYS.PROCUREMENTS, JSON.stringify(SEED_PROCUREMENTS));
   localStorage.setItem(STORAGE_KEYS.INSPECTIONS, JSON.stringify(SEED_INSPECTION_REPORTS));
   localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(SEED_NOTIFICATIONS));
+  localStorage.setItem(STORAGE_KEYS.SLOTS, JSON.stringify(SEED_SLOTS));
+  localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(SEED_BOOKINGS));
+  localStorage.setItem(STORAGE_KEYS.DIGITAL_SLIPS, JSON.stringify(SEED_DIGITAL_SLIPS));
+  localStorage.setItem(STORAGE_KEYS.PRICE_COMPARISONS, JSON.stringify(SEED_PRICE_COMPARISONS));
   window.dispatchEvent(new Event('agrilink_data_changed'));
 };
 
@@ -175,3 +203,52 @@ export const markAllNotificationsAsRead = (userId: string) => {
   const updated = notifs.map((n) => (n.recipientUserId === userId ? { ...n, isRead: true } : n));
   setItem(STORAGE_KEYS.NOTIFICATIONS, updated);
 };
+
+// Slots Storage
+export const getStoredSlots = (): Slot[] => getItem(STORAGE_KEYS.SLOTS, SEED_SLOTS);
+export const saveStoredSlots = (slots: Slot[]) => setItem(STORAGE_KEYS.SLOTS, slots);
+export const saveSlot = (slot: Slot) => {
+  const slots = getStoredSlots();
+  const idx = slots.findIndex((s) => s.id === slot.id);
+  if (idx >= 0) {
+    slots[idx] = slot;
+  } else {
+    slots.push(slot);
+  }
+  saveStoredSlots(slots);
+};
+
+// Bookings Storage
+export const getStoredBookings = (): Booking[] => getItem(STORAGE_KEYS.BOOKINGS, SEED_BOOKINGS);
+export const saveStoredBookings = (bookings: Booking[]) => setItem(STORAGE_KEYS.BOOKINGS, bookings);
+export const saveBooking = (booking: Booking) => {
+  const bookings = getStoredBookings();
+  const idx = bookings.findIndex((b) => b.id === booking.id);
+  if (idx >= 0) {
+    bookings[idx] = booking;
+  } else {
+    bookings.unshift(booking);
+  }
+  saveStoredBookings(bookings);
+};
+
+// Digital Slips Storage
+export const getStoredDigitalSlips = (): DigitalSlip[] =>
+  getItem(STORAGE_KEYS.DIGITAL_SLIPS, SEED_DIGITAL_SLIPS);
+export const saveStoredDigitalSlips = (slips: DigitalSlip[]) =>
+  setItem(STORAGE_KEYS.DIGITAL_SLIPS, slips);
+export const saveDigitalSlip = (slip: DigitalSlip) => {
+  const slips = getStoredDigitalSlips();
+  const idx = slips.findIndex((s) => s.id === slip.id || s.slipId === slip.slipId);
+  if (idx >= 0) {
+    slips[idx] = slip;
+  } else {
+    slips.unshift(slip);
+  }
+  saveStoredDigitalSlips(slips);
+};
+
+// Real-Time Price Comparisons Storage
+export const getStoredPriceComparisons = (): FactoryPriceComparison[] =>
+  getItem(STORAGE_KEYS.PRICE_COMPARISONS, SEED_PRICE_COMPARISONS);
+

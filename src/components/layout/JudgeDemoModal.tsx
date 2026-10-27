@@ -109,34 +109,6 @@ export const JudgeDemoModal: React.FC<JudgeDemoModalProps> = ({ isOpen, onClose 
             </div>
           </button>
 
-          {/* Field Officer Option */}
-          <button
-            type="button"
-            onClick={() => handleSelectRole('officer')}
-            className="w-full text-left p-4 rounded-2xl bg-white hover:bg-[#FAF7F0] border border-[#DFD7C4] hover:border-[#173522] transition-all group shadow-2xs flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-[#173522] text-[#EBE5D6] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                <ShieldCheck className="w-6 h-6 text-[#D97824]" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-serif text-base font-bold text-[#171713] group-hover:text-[#173522]">
-                    Demo as Field Officer
-                  </h4>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                    Inspector
-                  </span>
-                </div>
-                <p className="text-xs text-[#777268] mt-0.5">
-                  <strong>Rajesh Sharma</strong> (Agronomist) • Verification Queue, GIS Map &amp; Inspection Reports
-                </p>
-              </div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-[#EBE5D6] group-hover:bg-[#173522] group-hover:text-white text-[#171713] flex items-center justify-center transition-colors shrink-0">
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </button>
 
           {/* Factory Option */}
           <button

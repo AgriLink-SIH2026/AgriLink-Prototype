@@ -126,8 +126,8 @@ export const LandingPage: React.FC = () => {
 
               {/* Subtext */}
               <p className="text-base sm:text-lg text-[#777268] leading-relaxed max-w-xl font-normal">
-                AgriLink connects farmers, field officers and processing factories on one digital network,
-                bringing certainty to harvest schedules, computerizing weighment, and securing automated settlements.
+                AgriLink connects farmers and processing factories on one digital network,
+                bringing certainty to 24-hour intake schedules, computerized weighment, and secure automated settlements.
               </p>
 
               {/* Action Buttons */}
@@ -183,20 +183,6 @@ export const LandingPage: React.FC = () => {
                         <Sprout className="w-4 h-4" />
                       </div>
                       <span>Farmer</span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-[#EBE5D6]/60 group-hover:text-[#D97824] group-hover:translate-x-1 transition-all" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleLaunchRole('officer')}
-                    className="w-full py-3.5 px-4 rounded-2xl bg-[#244532] hover:bg-[#2d563e] border border-[#346347] text-left text-sm font-bold text-white flex items-center justify-between transition-all group shadow-2xs"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-[#173522] flex items-center justify-center text-[#D97824]">
-                        <ShieldCheck className="w-4 h-4" />
-                      </div>
-                      <span>Field Officer</span>
                     </div>
                     <ArrowRight className="w-4 h-4 text-[#EBE5D6]/60 group-hover:text-[#D97824] group-hover:translate-x-1 transition-all" />
                   </button>
@@ -321,12 +307,12 @@ export const LandingPage: React.FC = () => {
               {
                 step: '01',
                 title: 'Farmer Registers Crop',
-                desc: 'Enters acreage, crop variety, and captures real GPS coordinates with photographic proof.',
+                desc: 'Enters acreage, crop variety, sowing date, and location lot details.',
               },
               {
                 step: '02',
-                title: 'Field Officer Verifies',
-                desc: 'Examines boundary polygon, on-site photographs, and files digital inspection certificate.',
+                title: '24h Slot Booking & Pass',
+                desc: 'Selects 24-hour factory intake window within 7-day advance booking window and gets Digital Slip.',
               },
               {
                 step: '03',
@@ -383,7 +369,7 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Farmer */}
             <div className="p-7 rounded-3xl bg-[#244532] border border-[#346347] flex flex-col justify-between shadow-xs">
               <div>
@@ -392,38 +378,16 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <h3 className="font-serif text-xl font-bold text-[#EBE5D6] mb-2">Farmer</h3>
                 <p className="text-xs text-[#EBE5D6]/70 leading-relaxed">
-                  Simple, accessible portal for rural producers. Register crops with GPS camera, track
-                  procurement progress in real time, view weighment certificates, and receive SMS alerts.
+                  Simple, accessible portal for rural producers. Register crops, book 24-hour factory intake
+                  windows, obtain digital gate passes with QR, and compare live mandi prices.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => handleLaunchRole('farmer')}
-                className="mt-6 w-full py-2.5 bg-[#D97824] hover:bg-[#C3681B] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
+                className="mt-6 w-full py-2.5 bg-[#D97824] hover:bg-[#C3681B] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Access Farmer Portal</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Field Officer */}
-            <div className="p-7 rounded-3xl bg-[#244532] border border-[#346347] flex flex-col justify-between shadow-xs">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-[#173522] text-[#D97824] flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h3 className="font-serif text-xl font-bold text-[#EBE5D6] mb-2">Field Officer</h3>
-                <p className="text-xs text-[#EBE5D6]/70 leading-relaxed">
-                  Review crop registrations against GIS maps and photographic evidence. Verify authenticity,
-                  request re-verification, or file digital inspection reports with yield estimates.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleLaunchRole('officer')}
-                className="mt-6 w-full py-2.5 bg-[#D97824] hover:bg-[#C3681B] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
-              >
-                <span>Access Officer Desk</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>

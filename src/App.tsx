@@ -21,12 +21,6 @@ import { FarmerProcurement } from './pages/farmer/FarmerProcurement';
 import { FactoryLocator } from './pages/farmer/FactoryLocator';
 import { FarmerNotifications } from './pages/farmer/FarmerNotifications';
 
-// Officer Pages
-import { OfficerDashboard } from './pages/officer/OfficerDashboard';
-import { OfficerFarmers } from './pages/officer/OfficerFarmers';
-import { OfficerVerification } from './pages/officer/OfficerVerification';
-import { OfficerReports } from './pages/officer/OfficerReports';
-import { OfficerNotifications } from './pages/officer/OfficerNotifications';
 
 // Factory Pages
 import { FactoryDashboard } from './pages/factory/FactoryDashboard';
@@ -118,28 +112,10 @@ const Router: React.FC = () => {
       );
     }
 
-    // 3. Officer Routes (Protected, role = officer)
+    // 3. Officer Routes (Deprecated - Redirect to Login)
     if (currentPath.startsWith('/officer/')) {
-      return (
-        <ProtectedRoute allowedRole="officer" currentPath={currentPath}>
-          {(() => {
-            switch (currentPath) {
-              case '/officer/dashboard':
-                return <OfficerDashboard />;
-              case '/officer/farmers':
-                return <OfficerFarmers />;
-              case '/officer/verification':
-                return <OfficerVerification />;
-              case '/officer/inspection-reports':
-                return <OfficerReports />;
-              case '/officer/notifications':
-                return <OfficerNotifications />;
-              default:
-                return <OfficerDashboard />;
-            }
-          })()}
-        </ProtectedRoute>
-      );
+      window.location.replace('/login');
+      return null;
     }
 
     // 4. Factory Routes (Protected, role = factory)

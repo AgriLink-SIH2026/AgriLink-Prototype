@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppData } from '../../context/AppDataContext';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { SmartInsights } from '../../components/common/SmartInsights';
 import { SmartInsightsService } from '../../services/smartInsights';
 import { Timeline } from '../../components/common/Timeline';
+import { SlotService } from '../../services/slotService';
+import { getVehicleStatusBadge } from '../../services/digitalSlipService';
+import { DigitalSlipModal } from '../../components/farmer/DigitalSlipModal';
+import { VehicleUpdateModal } from '../../components/farmer/VehicleUpdateModal';
+import { SlotBookingModal } from '../../components/farmer/SlotBookingModal';
+import { PriceComparisonDashboard } from '../../components/farmer/PriceComparisonDashboard';
+import { MultilingualChatbot } from '../../components/farmer/MultilingualChatbot';
+import { IvrVoiceWidget } from '../../components/farmer/IvrVoiceWidget';
+import { Booking, DigitalSlip, CropType } from '../../types';
 import {
   Sprout,
   CheckCircle2,
@@ -19,11 +28,33 @@ import {
   TrendingUp,
   MapPin,
   Calendar,
+  QrCode,
+  AlertTriangle,
+  RotateCcw,
 } from 'lucide-react';
 
 export const FarmerDashboard: React.FC = () => {
   const { currentUser, farmerProfile } = useAuth();
-  const { crops, procurements } = useAppData();
+  const {
+    crops,
+    procurements,
+    bookings,
+    slots,
+    digitalSlips,
+    releaseSlot,
+    updateBookingVehicle,
+    getDigitalSlipForBooking,
+  } = useAppData();
+
+  // Modal states
+  const [selectedSlip, setSelectedSlip] = useState<DigitalSlip | null>(null);
+  const [isSlipModalOpen, setIsSlipModalOpen] = useState(false);
+
+  const [selectedVehicleBooking, setSelectedVehicleBooking] = useState<Booking | null>(null);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+
+  const [isSlotBookingModalOpen, setIsSlotBookingModalOpen] = useState(false);
+  const [preselectedSlotId, setPreselectedSlotId] = useState<string | undefined>(undefined);
 
   // Filter crops belonging to this farmer
   const myCrops = currentUser
@@ -35,12 +66,17 @@ export const FarmerDashboard: React.FC = () => {
     ? procurements.filter((p) => p.farmerId === currentUser.id || p.farmerName === currentUser.name)
     : [];
 
+  // Filter bookings belonging to this farmer
+  const myBookings = currentUser
+    ? bookings.filter((b) => b.farmerId === currentUser.id || b.farmerName === currentUser.name)
+    : [];
+
+  const activeBookings = myBookings.filter((b) => b.slotStatus === 'BOOKED');
+  const firstBooking = activeBookings[0];
+
   // KPI Metrics
   const registeredCount = myCrops.length;
-  const verifiedCount = myCrops.filter((c) => c.status === 'Verified').length;
-  const pendingVerificationCount = myCrops.filter(
-    (c) => c.status === 'Pending Verification' || c.status === 'Re-verification Required'
-  ).length;
+  const activeSlotCount = activeBookings.length;
   const activeProcurementCount = myProcurements.filter(
     (p) => p.currentStatus !== 'Completed'
   ).length;
@@ -67,16 +103,40 @@ export const FarmerDashboard: React.FC = () => {
         .toUpperCase()
     : 'TG';
 
+  const handleOpenSlipModal = (booking: Booking) => {
+    const slip = getDigitalSlipForBooking(booking.id) || digitalSlips.find(s => s.bookingId === booking.id);
+    if (slip) {
+      setSelectedSlip(slip);
+      setIsSlipModalOpen(true);
+    }
+  };
+
+  const handleOpenVehicleModal = (booking: Booking) => {
+    setSelectedVehicleBooking(booking);
+    setIsVehicleModalOpen(true);
+  };
+
+  const handleReleaseSlot = async (bookingId: string) => {
+    if (window.confirm('Are you sure you want to release this 24-hour intake slot? It will be instantly made available to queuing farmers.')) {
+      await releaseSlot(bookingId);
+    }
+  };
+
+  const handleBookFromPriceComparison = (slotId: string, cropType: CropType) => {
+    setPreselectedSlotId(slotId);
+    setIsSlotBookingModalOpen(true);
+  };
+
   return (
     <div className="space-y-7 font-sans text-[#171713]">
-      {/* Top Header matching Screenshot 1 */}
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#DFD7C4]/60">
         <div>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#171713] tracking-tight">
             Farmer Dashboard
           </h1>
           <p className="text-xs text-[#777268] mt-0.5">
-            Overview • Foundation build
+            Overview • 24-Hour Dynamic Slots &amp; Factory Procurement
           </p>
         </div>
 
@@ -92,27 +152,40 @@ export const FarmerDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Welcome Hero Area matching Screenshot 1 */}
+      {/* Welcome Hero Area */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-serif text-3xl sm:text-4xl font-extrabold text-[#171713] tracking-tight">
             Welcome to AgriLink
           </h2>
           <p className="text-sm text-[#777268] mt-1.5">
-            Your farmer workspace is ready. Register your first crop to begin.
+            Book 24-hour factory intake slots, obtain digital gate passes, and compare mandi buying rates.
           </p>
         </div>
 
-        <a
-          href="/farmer/crops/register"
-          className="inline-flex items-center gap-2 px-5 py-3 bg-[#173522] hover:bg-[#244532] text-[#EBE5D6] rounded-xl text-xs font-bold transition shadow-sm self-start sm:self-auto shrink-0"
-        >
-          <PlusCircle className="w-4 h-4 text-[#D97824]" />
-          <span>Register New Crop</span>
-        </a>
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <button
+            onClick={() => {
+              setPreselectedSlotId(undefined);
+              setIsSlotBookingModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-[#D97824] hover:bg-[#c3681b] text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+          >
+            <Clock className="w-4 h-4" />
+            <span>Book 24h Slot</span>
+          </button>
+
+          <a
+            href="/farmer/crops/register"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-[#173522] hover:bg-[#244532] text-[#EBE5D6] rounded-xl text-xs font-bold transition shadow-sm shrink-0"
+          >
+            <PlusCircle className="w-4 h-4 text-[#D97824]" />
+            <span>Register New Crop</span>
+          </a>
+        </div>
       </div>
 
-      {/* 4 Stats Cards matching Screenshot 1 */}
+      {/* 4 Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Registered Crops */}
         <div className="bg-[#EBE5D6] p-5 rounded-3xl border border-[#DFD7C4] flex flex-col justify-between shadow-2xs">
@@ -129,27 +202,27 @@ export const FarmerDashboard: React.FC = () => {
               {registeredCount}
             </p>
             <p className="text-xs text-[#777268]">
-              {registeredCount === 0 ? 'No crops registered yet' : `${registeredCount} field plot(s) recorded`}
+              {registeredCount === 0 ? 'No crops recorded yet' : `${registeredCount} field plot(s) registered`}
             </p>
           </div>
         </div>
 
-        {/* Card 2: Verified Crops */}
+        {/* Card 2: Active 24h Slots */}
         <div className="bg-[#EBE5D6] p-5 rounded-3xl border border-[#DFD7C4] flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#777268]">
-              VERIFIED CROPS
+              24H INTAKE SLOTS
             </span>
-            <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#FAF7F0] text-[#777268] border border-[#DFD7C4]">
-              {verifiedCount > 0 ? 'ACTIVE' : 'IDLE'}
+            <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#FAF7F0] text-emerald-800 border border-emerald-300">
+              {activeSlotCount > 0 ? 'CONFIRMED' : 'OPEN'}
             </span>
           </div>
           <div>
             <p className="font-serif text-4xl font-black text-[#171713] mb-1">
-              {verifiedCount}
+              {activeSlotCount}
             </p>
             <p className="text-xs text-[#777268]">
-              {verifiedCount === 0 ? 'Nothing verified yet' : `${verifiedCount} plot(s) approved by officer`}
+              {activeSlotCount === 0 ? 'No active slots booked' : `${activeSlotCount} intake window(s) reserved`}
             </p>
           </div>
         </div>
@@ -169,137 +242,132 @@ export const FarmerDashboard: React.FC = () => {
               {activeProcurementCount}
             </p>
             <p className="text-xs text-[#777268]">
-              {activeProcurementCount === 0 ? 'Nothing in progress' : `${activeProcurementCount} consignment(s) moving`}
+              {activeProcurementCount === 0 ? 'Nothing in progress' : `${activeProcurementCount} lot(s) moving through intake`}
             </p>
           </div>
         </div>
 
-        {/* Card 4: Pending Actions */}
+        {/* Card 4: Digital Slips Generated */}
         <div className="bg-[#EBE5D6] p-5 rounded-3xl border border-[#DFD7C4] flex flex-col justify-between shadow-2xs">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#777268]">
-              PENDING ACTIONS
+              DIGITAL GATE PASSES
             </span>
             <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#FAF7F0] text-[#777268] border border-[#DFD7C4]">
-              {pendingVerificationCount > 0 ? 'ATTENTION' : 'IDLE'}
+              QR READY
             </span>
           </div>
           <div>
             <p className="font-serif text-4xl font-black text-[#171713] mb-1">
-              {pendingVerificationCount}
+              {digitalSlips.filter((s) => s.farmerId === currentUser?.id).length || activeBookings.length}
             </p>
             <p className="text-xs text-[#777268]">
-              {pendingVerificationCount === 0 ? "You're all caught up" : `${pendingVerificationCount} awaiting field check`}
+              Certified online slips for factory entry
             </p>
           </div>
         </div>
       </div>
 
-      {/* Main Procurement Showcase or Empty State matching Screenshot 1 */}
-      {myProcurements.length === 0 ? (
-        <div className="bg-[#EBE5D6] rounded-3xl border border-[#DFD7C4] p-10 sm:p-14 text-center shadow-2xs">
-          <div className="w-12 h-12 rounded-2xl bg-[#FAF7F0] border border-[#DFD7C4] text-[#777268] font-mono font-bold text-sm flex items-center justify-center mx-auto mb-4">
-            00
-          </div>
-          <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#171713] mb-2">
-            No procurement activity yet
-          </h3>
-          <p className="text-xs sm:text-sm text-[#777268] max-w-md mx-auto leading-relaxed mb-6">
-            Register a crop and when a field officer verifies it, your mill intake schedule,
-            transport vehicle assignments, and weighment progress will appear here.
-          </p>
-          <a
-            href="/farmer/crops/register"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#173522] hover:bg-[#244532] text-[#EBE5D6] rounded-xl text-xs font-bold transition shadow-sm"
-          >
-            <PlusCircle className="w-4 h-4 text-[#D97824]" />
-            <span>Register a Crop</span>
-          </a>
-        </div>
-      ) : (
-        /* Connected Live Procurement Card */
+      {/* Active 24-Hour Slot Bookings Card with Vehicle Action & Digital Slip */}
+      {firstBooking && (
         <div className="bg-[#FAF7F0] rounded-3xl border border-[#DFD7C4] p-6 sm:p-8 shadow-sm space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#DFD7C4]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#DFD7C4]">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] uppercase font-bold tracking-wider text-[#D97824]">
-                  ACTIVE PROCUREMENT
+                  ACTIVE 24-HOUR INTAKE BOOKING
                 </span>
                 <span className="text-[10px] font-mono text-[#777268]">
-                  {firstProcurement.batchNumber || firstProcurement.id}
+                  #{firstBooking.id}
                 </span>
               </div>
               <h3 className="font-serif text-2xl font-bold text-[#171713]">
-                {firstProcurement.cropType} Procurement
+                {firstBooking.cropType} Intake Window
               </h3>
               <p className="text-xs text-[#777268] mt-0.5">
-                Processing Factory: <strong>{firstProcurement.factoryName}</strong>
+                Harvest Date: <strong>{firstBooking.harvestDate}</strong> • Allocated Quantity:{' '}
+                <strong className="text-[#171713]">{firstBooking.quantityTons} Tons</strong>
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <StatusBadge status={firstProcurement.currentStatus} size="md" />
-              <a
-                href="/farmer/procurement"
-                className="px-4 py-2 bg-[#173522] hover:bg-[#244532] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Vehicle Update Action Button */}
+              <button
+                onClick={() => handleOpenVehicleModal(firstBooking)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-[#EBE5D6] text-[#173522] border border-[#DFD7C4] rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
               >
-                <span>Full Timeline</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </a>
+                <Truck className="w-3.5 h-3.5 text-[#D97824]" />
+                <span>Vehicle Update</span>
+              </button>
+
+              {/* View Online Digital Slip Button */}
+              <button
+                onClick={() => handleOpenSlipModal(firstBooking)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#173522] hover:bg-[#244532] text-white rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
+              >
+                <QrCode className="w-3.5 h-3.5 text-[#D97824]" />
+                <span>View Digital Slip</span>
+              </button>
+
+              {/* Dynamic Release Slot Button */}
+              <button
+                onClick={() => handleReleaseSlot(firstBooking.id)}
+                className="inline-flex items-center gap-1 px-3 py-2 text-red-700 hover:bg-red-50 rounded-xl text-xs font-semibold border border-red-200 transition cursor-pointer"
+                title="Release this slot so other farmers can take it"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Release Slot</span>
+              </button>
             </div>
           </div>
 
-          {/* Quick Metrics of Active Procurement */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div className="p-3.5 bg-[#EBE5D6] rounded-2xl border border-[#DFD7C4]">
-              <span className="text-[10px] uppercase font-bold text-[#777268] block mb-1">
-                Scheduled Intake Date
+          {/* 24-Hour Window and Vehicle Details */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            {/* 24h Window banner */}
+            <div className="p-4 bg-[#EBE5D6] rounded-2xl border border-[#DFD7C4] space-y-1">
+              <span className="text-[10px] uppercase font-bold text-[#777268] block">
+                24-Hour Time Window
               </span>
-              <p className="font-serif text-base font-bold text-[#171713]">
-                {firstProcurement.scheduledDate}
+              <p className="font-serif text-sm font-bold text-[#171713]">
+                {SlotService.format24HourWindow(firstBooking.slotStart, firstBooking.slotEnd)}
               </p>
             </div>
 
-            <div className="p-3.5 bg-[#EBE5D6] rounded-2xl border border-[#DFD7C4]">
-              <span className="text-[10px] uppercase font-bold text-[#777268] block mb-1">
-                Cultivated Area
+            {/* Vehicle Plate / Warning Banner */}
+            <div className="p-4 bg-[#EBE5D6] rounded-2xl border border-[#DFD7C4] space-y-1">
+              <span className="text-[10px] uppercase font-bold text-[#777268] block">
+                Transport Vehicle Plate
               </span>
-              <p className="font-serif text-base font-bold text-[#171713]">
-                {firstProcurement.landArea} {firstProcurement.landUnit}
-              </p>
+              {firstBooking.vehicleNumber ? (
+                <p className="font-mono text-base font-extrabold text-[#173522]">
+                  {firstBooking.vehicleNumber}
+                </p>
+              ) : (
+                <div className="flex items-center gap-1.5 text-amber-800 font-bold text-xs mt-0.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Pending - Required 6h prior</span>
+                </div>
+              )}
             </div>
 
-            <div className="p-3.5 bg-[#EBE5D6] rounded-2xl border border-[#DFD7C4]">
-              <span className="text-[10px] uppercase font-bold text-[#777268] block mb-1">
-                Transport Vehicle
+            {/* Gate Pass Quick Link */}
+            <div className="p-4 bg-[#EBE5D6] rounded-2xl border border-[#DFD7C4] space-y-1">
+              <span className="text-[10px] uppercase font-bold text-[#777268] block">
+                Digital Pass Status
               </span>
-              <p className="font-mono text-sm font-bold text-[#171713]">
-                {firstProcurement.transport?.vehicleNumber || 'Pending Dispatch'}
+              <p className="font-semibold text-emerald-800 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>QR Gate Pass Generated</span>
               </p>
             </div>
-
-            <div className="p-3.5 bg-[#EBE5D6] rounded-2xl border border-[#DFD7C4]">
-              <span className="text-[10px] uppercase font-bold text-[#777268] block mb-1">
-                Current Stage
-              </span>
-              <p className="font-semibold text-[#171713] truncate">
-                {firstProcurement.currentStatus}
-              </p>
-            </div>
-          </div>
-
-          {/* Connected Visual Timeline Preview */}
-          <div className="pt-2">
-            <Timeline
-              currentStatus={firstProcurement.currentStatus}
-              statusHistory={firstProcurement.statusHistory}
-              compact
-            />
           </div>
         </div>
       )}
 
-      {/* Two Columns: Registered Crops List & Smart Insights */}
+      {/* Real-Time Price Comparison Dashboard */}
+      <PriceComparisonDashboard onBookSlotClick={handleBookFromPriceComparison} />
+
+      {/* Two Columns: Registered Crops List & IVR/Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Registered Crops */}
         <div className="lg:col-span-2 space-y-4">
@@ -310,7 +378,7 @@ export const FarmerDashboard: React.FC = () => {
                   My Registered Crops
                 </h3>
                 <p className="text-xs text-[#777268]">
-                  Verified plots and inspection status
+                  Crop plots eligible for 24-hour factory slot booking
                 </p>
               </div>
               <a
@@ -327,7 +395,7 @@ export const FarmerDashboard: React.FC = () => {
                 <Sprout className="w-8 h-8 text-[#777268]/40 mx-auto mb-2" />
                 <p className="text-xs text-[#171713] font-bold">No registered crops yet</p>
                 <p className="text-xs text-[#777268] mt-0.5">
-                  Register your sown fields with geotagged photographic proof.
+                  Register your cash crops or grains to unlock 24-hour factory intake slots.
                 </p>
               </div>
             ) : (
@@ -340,7 +408,7 @@ export const FarmerDashboard: React.FC = () => {
                     <div className="flex items-center gap-3.5">
                       <div className="w-14 h-14 rounded-2xl bg-[#EBE5D6] overflow-hidden shrink-0 border border-[#DFD7C4]">
                         <img
-                          src={crop.imageUrl}
+                          src={crop.imageUrl || 'https://images.unsplash.com/photo-1594488518001-3e479a8e97f0?w=800&auto=format&fit=crop&q=80'}
                           alt={crop.cropType}
                           className="w-full h-full object-cover"
                         />
@@ -364,15 +432,15 @@ export const FarmerDashboard: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3 self-end sm:self-auto">
-                      <StatusBadge status={crop.status} size="sm" />
-                      {crop.status === 'Verified' && (
-                        <a
-                          href="/farmer/procurement"
-                          className="px-3 py-1.5 bg-[#EBE5D6] hover:bg-[#173522] hover:text-white text-[#173522] rounded-xl text-xs font-semibold transition"
-                        >
-                          Procurement &rarr;
-                        </a>
-                      )}
+                      <button
+                        onClick={() => {
+                          setPreselectedSlotId(undefined);
+                          setIsSlotBookingModalOpen(true);
+                        }}
+                        className="px-3 py-1.5 bg-[#173522] hover:bg-[#244532] text-white rounded-xl text-xs font-semibold transition cursor-pointer"
+                      >
+                        Book 24h Slot &rarr;
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -381,8 +449,10 @@ export const FarmerDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Right 1 Col: Insights / Passbook */}
+        {/* Right 1 Col: IVR Voice Access & Insights */}
         <div className="space-y-6">
+          <IvrVoiceWidget />
+
           <div className="bg-[#FAF7F0] p-6 rounded-3xl border border-[#DFD7C4] shadow-2xs">
             <h3 className="font-serif text-base font-bold text-[#171713] mb-1">
               Farmer Profile Status
@@ -415,7 +485,35 @@ export const FarmerDashboard: React.FC = () => {
           <SmartInsights insights={prototypeInsights} />
         </div>
       </div>
+
+      {/* Floating Multilingual Chatbot FAB & Drawer */}
+      <MultilingualChatbot />
+
+      {/* Digital Slip Modal */}
+      <DigitalSlipModal
+        slip={selectedSlip}
+        isOpen={isSlipModalOpen}
+        onClose={() => setIsSlipModalOpen(false)}
+        onUpdateVehicleClick={() => {
+          setIsSlipModalOpen(false);
+          if (firstBooking) handleOpenVehicleModal(firstBooking);
+        }}
+      />
+
+      {/* Vehicle Update Modal */}
+      <VehicleUpdateModal
+        booking={selectedVehicleBooking}
+        isOpen={isVehicleModalOpen}
+        onClose={() => setIsVehicleModalOpen(false)}
+        onSave={updateBookingVehicle}
+      />
+
+      {/* 24-Hour Slot Booking Modal */}
+      <SlotBookingModal
+        isOpen={isSlotBookingModalOpen}
+        onClose={() => setIsSlotBookingModalOpen(false)}
+        preselectedSlotId={preselectedSlotId}
+      />
     </div>
   );
 };
-

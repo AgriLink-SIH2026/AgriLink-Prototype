@@ -57,19 +57,6 @@ export const DemoBanner: React.FC = () => {
               </button>
 
               <button
-                onClick={() => handleSwitch('officer-1', 'Field Officer (Rajesh Sharma)', '/officer/dashboard')}
-                className={`px-2.5 py-1 rounded text-xs transition flex items-center gap-1.5 font-medium ${
-                  currentUser?.id === 'officer-1'
-                    ? 'bg-[#244532] text-white shadow-sm ring-1 ring-white/20'
-                    : 'bg-[#173522] hover:bg-[#244532] text-[#EBE5D6] border border-[#244532]'
-                }`}
-                title="Switch to Rajesh Sharma (Agronomist / Field Officer)"
-              >
-                <UserCheck className="w-3 h-3 text-[#9DC88D]" />
-                <span>📋 Field Officer</span>
-              </button>
-
-              <button
                 onClick={() => handleSwitch('factory-1', 'Factory (Sahyadri Sugar Mill)', '/factory/dashboard')}
                 className={`px-2.5 py-1 rounded text-xs transition flex items-center gap-1.5 font-medium ${
                   currentUser?.id === 'factory-1'

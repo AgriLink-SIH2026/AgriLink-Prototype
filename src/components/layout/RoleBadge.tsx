@@ -24,15 +24,7 @@ export const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = 'md' }) => {
           <span>Farmer</span>
         </span>
       );
-    case 'officer':
-      return (
-        <span
-          className={`inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-300/60 ${sizeClasses}`}
-        >
-          <ShieldCheck className="w-3.5 h-3.5 text-blue-700" />
-          <span>Field Officer</span>
-        </span>
-      );
+
     case 'factory':
       return (
         <span

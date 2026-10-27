@@ -137,7 +137,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                 className="w-full h-full object-cover"
               />
               <div className="absolute bottom-2 left-2 bg-[#12281A]/85 text-[#F3EFE4] px-2.5 py-1 rounded-lg text-[10px] font-mono backdrop-blur-xs">
-                Captured: {new Date(crop.capturedAt).toLocaleString()}
+                Captured: {crop.capturedAt ? new Date(crop.capturedAt).toLocaleString() : 'N/A'}
               </div>
             </div>
 
@@ -145,13 +145,13 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
             <div>
               <div className="rounded-2xl overflow-hidden border border-[#DFD7C4]">
                 <MapView
-                  center={[crop.latitude, crop.longitude]}
+                  center={[crop.latitude ?? 16.7218, crop.longitude ?? 74.2539]}
                   zoom={14}
                   height="208px"
                   markers={[
                     {
-                      lat: crop.latitude,
-                      lng: crop.longitude,
+                      lat: crop.latitude ?? 16.7218,
+                      lng: crop.longitude ?? 74.2539,
                       title: `${crop.cropType} Field`,
                       subtitle: `${crop.farmerName} (${crop.village})`,
                       type: 'crop',
@@ -162,7 +162,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
               <div className="mt-1.5 flex items-center justify-between text-[11px] text-[#777268] font-mono px-1">
                 <span className="flex items-center gap-1 text-[#173522]">
                   <MapPin className="w-3 h-3 text-[#D97824]" />
-                  {crop.latitude.toFixed(5)}° N, {crop.longitude.toFixed(5)}° E
+                  {(crop.latitude ?? 16.7218).toFixed(5)}° N, {(crop.longitude ?? 74.2539).toFixed(5)}° E
                 </span>
                 {crop.locationAccuracy && <span>&plusmn;{crop.locationAccuracy}m precision</span>}
               </div>
